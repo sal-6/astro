@@ -24,7 +24,7 @@ def num_1():
     tol = 10**-13
 
     a = time.time()
-    orbit = solve_ivp(astro.propogate_2BP, [0, P*2], init_state, method="RK45", atol=tol, rtol=tol)
+    orbit = solve_ivp(astro.propogate_2BP, [0, P*2], init_state, method="RK45", atol=tol, rtol=tol, t_eval=np.linspace(0, 2*int(P), 2*int(P)+1))
     print(f"Propogation took: {time.time() - a} seconds.")
 
     #print(orbit.t.shape)
@@ -148,9 +148,68 @@ def num_1():
 
     plt.show()
 
-    
 
-    #plt.show()
+def num_2():
+
+    a = (-30000 * 10 ** 3) 
+    e = 1.2
+    i = 80
+    raan = 180
+    w = 10
+
+    # solve for true anomoly such that r = R_earth
+    u_rad = np.arccos((((a * (1 - e ** 2)) / astro.RADIUS_EARTH) - 1) / e)
+    u = np.degrees(u_rad)
+
+    print(u)
+    print(u_rad)
+
+    P = 10000
+
+    _r, _v = astro.standard_to_cartesian(a, e, i, raan, w, u)
+    init_state = np.array([_r[0], _r[1], _r[2], _v[0], _v[1], _v[2]])
+    tol = 10**-13
+
+    a = time.time()
+    orbit = solve_ivp(astro.propogate_2BP, [0, P], init_state, method="RK45", atol=tol, rtol=tol, t_eval=np.linspace(0, P, P+1))
+    print(f"Propogation took: {time.time() - a} seconds.")
+
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2]) 
+    ax.set_xlabel('x (m)', size=10)
+    ax.set_ylabel('y (m)', size=10)
+    ax.set_zlabel('z (m)', size=10)
+    ax.set_title("Orbital Path of Orbit A")
+    
+    plt.tight_layout()
+
+    pos = []
+    vel = []
+    acc = []
+    for i in range(orbit.t.shape[0]):
+        pos.append(math.sqrt(orbit.y[0][i] ** 2 + orbit.y[1][i] ** 2 + orbit.y[2][i] ** 2))
+        vel.append(math.sqrt(orbit.y[3][i] ** 2 + orbit.y[4][i] ** 2 + orbit.y[5][i] ** 2))
+        a_x = - astro.MU_EARTH / (pos[-1] ** 3) * orbit.y[0][i]
+        a_y = - astro.MU_EARTH / (pos[-1] ** 3) * orbit.y[1][i]
+        a_z = - astro.MU_EARTH / (pos[-1] ** 3) * orbit.y[2][i]
+        acc.append(math.sqrt(a_x ** 2 + a_y ** 2 + a_z ** 2))
+
+    init_energy = vel[0] ** 2 / 2 - astro.MU_EARTH / pos[0]
+    energy_deviation = [astro.calculate_orbital_energy(pos[i], vel[i]) - init_energy for i in range(len(orbit.t))]
+
+
+    fig2 = plt.figure()
+    ax4 = plt.axes()
+
+    ax4.plot(orbit.t, energy_deviation)
+    ax4.set_xlabel('Time (s)', size=10)
+    ax4.set_ylabel('Deviation from Initial Orbital Energy (J/kg)', size=10)
+    ax4.set_title("Deviation from Initial Orbital Energy Vs Time of Orbit A (t = 10000 s)")
+
+    plt.tight_layout()
+
+    plt.show()
 
 if __name__ == "__main__":
-    num_1()
+    num_2()
