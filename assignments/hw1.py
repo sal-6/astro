@@ -180,7 +180,7 @@ def num_2():
     ax.set_xlabel('x (m)', size=10)
     ax.set_ylabel('y (m)', size=10)
     ax.set_zlabel('z (m)', size=10)
-    ax.set_title("Orbital Path of Orbit A")
+    ax.set_title("Orbital Path of Orbit B")
     
     plt.tight_layout()
 
@@ -205,7 +205,7 @@ def num_2():
     ax4.plot(orbit.t, energy_deviation)
     ax4.set_xlabel('Time (s)', size=10)
     ax4.set_ylabel('Deviation from Initial Orbital Energy (J/kg)', size=10)
-    ax4.set_title("Deviation from Initial Orbital Energy Vs Time of Orbit A (t = 10000 s)")
+    ax4.set_title("Deviation from Initial Orbital Energy Vs Time of Orbit B (t = 10000 s)")
 
     plt.tight_layout()
 
