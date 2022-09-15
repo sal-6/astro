@@ -1,3 +1,8 @@
+#############################################################################
+# Sal Aslam
+# ENAE601 - UMD
+# Description: HW1 assignment problems
+
 import astro
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
@@ -158,7 +163,7 @@ def num_2():
     w = 10
 
     # solve for true anomoly such that r = R_earth
-    u_rad = np.arccos((((a * (1 - e ** 2)) / astro.RADIUS_EARTH) - 1) / e)
+    u_rad = 2 * math.pi - np.arccos((((a * (1 - e ** 2)) / astro.RADIUS_EARTH) - 1) / e)
     u = np.degrees(u_rad)
 
     print(u)
@@ -209,7 +214,25 @@ def num_2():
 
     plt.tight_layout()
 
+
+    true_anomoly = []
+    for i in range(len(orbit.t)):
+        _rad_c = np.array([orbit.y[0][i], orbit.y[1][i], orbit.y[2][i]])
+        _vel_c = np.array([orbit.y[3][i], orbit.y[4][i], orbit.y[5][i]])
+        _e = 1 / astro.MU_EARTH * ((vel[i] ** 2 - astro.MU_EARTH / pos[i]) * _rad_c - (np.dot(_rad_c, _vel_c)) * _vel_c)
+        true_anomoly.append(astro.calculate_true_anomoly(_e, _rad_c, _vel_c))
+
+    fig3 = plt.figure()
+    
+    t_anom_axes = plt.axes()
+
+    t_anom_axes.plot(orbit.t, true_anomoly)
+    t_anom_axes.set_xlabel('Time (s)', size=10)
+    t_anom_axes.set_ylabel(f'True Anomoly (rads)', size=10)
+    t_anom_axes.set_title('True Anomoly Vs Time')
+
     plt.show()
 
 if __name__ == "__main__":
+    num_1()
     num_2()
