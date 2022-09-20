@@ -66,7 +66,7 @@ def standard_to_cartesian(a, e, i, raan, w, u, mu=astro.MU_EARTH):
         i (float): Inclination (deg)
         raan (float): RAAN (deg)
         w (float): Argument of periapsis (deg)
-        u (float): True anamoly
+        u (float): True anamoly (deg)
 
     Returns:
         r
@@ -75,7 +75,7 @@ def standard_to_cartesian(a, e, i, raan, w, u, mu=astro.MU_EARTH):
     
     r = a * (1 - e ** 2) / (1 + e * np.cos(np.radians(u)))
 
-    _r = np.array([r * np.cos(np.radians(u)), a * np.sin(np.radians(u)), 0])
+    _r = np.array([r * np.cos(np.radians(u)), r * np.sin(np.radians(u)), 0])
     _v = math.sqrt(mu / (a * (1 - e ** 2))) * np.array([-np.sin(np.radians(u)), e + np.cos(np.radians(u)), 0])
 
     rad_raan = np.radians(raan)
@@ -94,10 +94,12 @@ def standard_to_cartesian(a, e, i, raan, w, u, mu=astro.MU_EARTH):
                       [-np.sin(rad_w), np.cos(rad_w), 0],
                       [0             , 0         , 1]])
 
+    R_eff = R_3_raan @ R_1_i @ R_3_w
+    R_eff = np.matrix.transpose(R_eff)
 
-    R_eff = np.matrix.transpose(np.matmul(R_3_w, np.matmul(R_1_i, R_3_raan)))
-    _pos = np.dot(R_eff, _r)
-    _vel = np.dot(R_eff, _v)
+
+    _pos = R_eff @ _r
+    _vel = R_eff @ _v
     return [_pos, _vel]
 
 
