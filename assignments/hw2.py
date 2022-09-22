@@ -70,21 +70,28 @@ def num_5():
     ax.plot(orbit.t, pos)
     ax.set_xlabel('Time (s)', size=10)
     ax.set_ylabel('Position (m)', size=10)
-    ax.set_title("Postion Vs Time of Orbit")
+    ax.set_title("Postion Vs Time of Ellipse")
 
-    ax.plot([0, t_curr], [np.linalg.norm(_r), np.linalg.norm(_r_f)], "ro")
+    ax.plot([0], [np.linalg.norm(_r)], "bo")
+    ax.plot([t_curr], [np.linalg.norm(_r_f)], "ro")
 
     fig = plt.figure()
     ax = plt.axes(projection='3d')
-    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2]) 
+    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2])
+    ax.plot3D([_r[0]], [_r[1]], [_r[2]], "bo")
+    ax.plot3D([_r_f[0]], [_r_f[1]], [_r_f[2]], "ro") 
     ax.set_xlabel('x (m)', size=10)
     ax.set_ylabel('y (m)', size=10)
     ax.set_zlabel('z (m)', size=10)
-    ax.set_title("Orbital Path")
+    ax.set_title("Orbital Path of Ellipse")
+
+    _e = astro.calculate_eccentricity_vector(_r_f, _v_f)
+    u_f = astro.calculate_true_anomoly(_e, _r_f, _v_f)
 
     final_states["ellipse"] = {
         "_r": _r_f,
-        "_v": _v_f
+        "_v": _v_f,
+        "u": np.degrees(u_f)
     }
 
     # define hyperbola elements
@@ -106,9 +113,7 @@ def num_5():
 
     init_state = np.array([_r[0], _r[1], _r[2], _v[0], _v[1], _v[2]])
     tol = 10**-13
-    orbit = solve_ivp(astro.propogate_2BP, [0, P], init_state, method="RK45", atol=tol, rtol=tol, t_eval=np.linspace(0, int(P), int(P)+1))
-    print("gere")
-    
+    orbit = solve_ivp(astro.propogate_2BP, [0, P], init_state, method="RK45", atol=tol, rtol=tol, t_eval=np.linspace(0, int(P), int(P)+1))    
 
     # perform initial guess for x
     x = astro.inital_guess_kepler(t_f, 0, a, _r, _v)
@@ -116,7 +121,6 @@ def num_5():
 
     tol = 10**-10
     while abs(t_f - t_curr) > tol:
-        print(t_f - t_curr)
         r = astro.calculate_radius(x, a, _r, _v)
         x = x + (t_f - t_curr) / (r / math.sqrt(astro.MU_EARTH))
         t_curr = astro.calculate_time(x, a, _r, _v)
@@ -140,22 +144,32 @@ def num_5():
     ax.plot(orbit.t, pos)
     ax.set_xlabel('Time (s)', size=10)
     ax.set_ylabel('Position (m)', size=10)
-    ax.set_title("Postion Vs Time of Orbit")
+    ax.set_title("Postion Vs Time of Hyperbola")
 
-    ax.plot([0, t_curr], [np.linalg.norm(_r), np.linalg.norm(_r_f)], "ro")
+    ax.plot([0], [np.linalg.norm(_r)], "bo")
+    ax.plot([t_curr], [np.linalg.norm(_r_f)], "ro")
 
     fig = plt.figure()
     ax = plt.axes(projection='3d')
-    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2]) 
+    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2])
+    ax.plot3D([_r[0]], [_r[1]], [_r[2]], "bo")
+    ax.plot3D([_r_f[0]], [_r_f[1]], [_r_f[2]], "ro")
     ax.set_xlabel('x (m)', size=10)
     ax.set_ylabel('y (m)', size=10)
     ax.set_zlabel('z (m)', size=10)
-    ax.set_title("Orbital Path")
+    ax.set_title("Orbital Path of Hyperbola")
+
+    _e = astro.calculate_eccentricity_vector(_r_f, _v_f)
+    u_f = astro.calculate_true_anomoly(_e, _r_f, _v_f)
 
     final_states["hyperbola"] = {
         "_r": _r_f,
-        "_v": _v_f
+        "_v": _v_f,
+        "u": np.degrees(u_f)
     }
+
+    print(final_states["ellipse"])
+    print(final_states["hyperbola"])
 
     plt.show()
 

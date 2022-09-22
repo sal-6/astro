@@ -152,7 +152,7 @@ def calculate_orbital_energy(r, v, mu=astro.MU_EARTH):
     return v ** 2 / 2 - mu / r
 
 def calculate_angular_momentum(_r, _v):
-    """_summary_
+    """Calculates angular momentum
 
     Args:
         _r (arr): Position vector
@@ -165,6 +165,16 @@ def calculate_angular_momentum(_r, _v):
 
 
 def calculate_true_anomoly(_e, _r, _v):
+    """Calciulate true anamoly
+
+    Args:
+        _e (_type_): _description_
+        _r (_type_): Radius vector
+        _v (_type_): Velocity vectore
+
+    Returns:
+        _type_: _description_
+    """
     
     v = np.arccos(np.dot(_e, _r) / (np.linalg.norm(_e) * np.linalg.norm(_r)))
 
@@ -172,3 +182,4 @@ def calculate_true_anomoly(_e, _r, _v):
         v = 2*math.pi - v
     
     return v
+

@@ -67,3 +67,32 @@ def calculate_final_state_kepler(x, a, _r_0, _v_0, t, mu=astro.MU_EARTH):
     _v = f_dot * _r_0 + g_dot * _v_0
 
     return _r, _v
+
+
+def calculate_eccentricity_vector(_r, _v, mu=astro.MU_EARTH):
+    """Calculates eccentricity vector
+
+    Args:
+        _r (arr): Radius vector
+        _v (arr): Velocity vector
+        mu (float, optional): Specific gravity. Defaults to astro.MU_EARTH.
+    
+    Returns:
+        arr: Eccentricity vector
+    """
+
+    _e = 1 / mu * ((np.linalg.norm(_v) ** 2 - mu / np.linalg.norm(_r)) * _r - (np.dot(_r, _v)) * _v)
+    return _e
+
+
+class Body():
+    def __init__(self, mass, _r_0, _v_0):
+        self.mass = mass
+        self._r_0 = _r_0
+        self._v_0 = _v_0
+
+        self._r_history = [_r_0]
+        self._v_history = [_v_0]
+
+    def step_states(self):
+        pass
