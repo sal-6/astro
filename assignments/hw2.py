@@ -11,7 +11,26 @@ import matplotlib.pyplot as plt
 
 
 def num_1():
-    pass
+    bodies = [
+        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.])),
+        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.])),
+        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.])),
+        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.])),
+    ]
+
+    sim = astro.NBody(bodies, 20000, .1)
+    sim.run()
+
+    # plot the positions of the bodies in 3d
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    for body in sim.bodies:
+        x = [i[0] for i in body._r_history]
+        y = [i[1] for i in body._r_history]
+        z = [i[2] for i in body._r_history]
+
+        ax.plot(x, y, z)
+    plt.show()
 
 
 def num_5():
@@ -175,4 +194,4 @@ def num_5():
 
 
 if __name__ == "__main__":
-    num_5()
+    num_1()

@@ -86,13 +86,47 @@ def calculate_eccentricity_vector(_r, _v, mu=astro.MU_EARTH):
 
 
 class Body():
-    def __init__(self, mass, _r_0, _v_0):
+    def __init__(self, mass, _r_0, _v_0, name=""):
+        self.name = name
         self.mass = mass
         self._r_0 = _r_0
         self._v_0 = _v_0
+        
 
         self._r_history = [_r_0]
         self._v_history = [_v_0]
+        self.time = [0]
 
-    def step_states(self):
-        pass
+    def step_states(self, _F, dt):
+        _a = _F / self.mass
+        self._v_history.append(self._v_history[-1] + _a * dt)
+        self._r_history.append(self._r_history[-1] + self._v_history[-1] * dt)
+        self.time.append(self.time[-1] + dt)
+
+
+class NBody():
+    def __init__(self, bodies, t_prop, dt=1):
+        self.bodies = bodies
+        self.t_prop = t_prop
+        self.dt = dt
+
+    def run(self):
+        
+        t = 0
+        while t < self.t_prop:
+            for body in self.bodies:
+                # calculate net force due to other bodies
+                _F = np.array([0., 0., 0.])
+                for other_body in self.bodies:
+                    if other_body != body:
+                        _r_to_body = body._r_history[-1] - other_body._r_history[-1]
+                        force = -astro.G * other_body.mass * body.mass / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
+                        _F = np.add(_F, force)
+                body.step_states(_F, self.dt)
+
+            # progress bar of the simulation
+            percent = t / self.t_prop * 100
+            print(f"\r{percent:.2f}%", end="")
+
+            t += self.dt
+        print()
