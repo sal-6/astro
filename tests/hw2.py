@@ -53,5 +53,11 @@ def np_test():
     _F += np.array([1., 0., 0.])
 
 
+def test_ode():
+    init = np.array([[2 * 10 ** 6, 0., 0., 0., 5000., 0.],
+            [-2 * 10 ** 6, 0., 0., 0., -5000., 0.]] )
+    
+    print(astro.NBodyODE(0, init, [10 ** 24, 10 ** 24]).shape)
+    print("test")
 
-num_1()
+test_ode()

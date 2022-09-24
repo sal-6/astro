@@ -92,10 +92,12 @@ class Body():
         self._r_0 = _r_0
         self._v_0 = _v_0
         
-
         self._r_history = [_r_0]
         self._v_history = [_v_0]
         self.time = [0]
+
+    def get_state(self):
+        return self._r_history[-1].tolist() + self._v_history[-1].tolist()
 
     def step_states(self, _F, dt):
         _a = _F / self.mass
@@ -104,11 +106,14 @@ class Body():
         self.time.append(self.time[-1] + dt)
 
 
+# ! IMPORTANT: This does not work. Need to figure out why ...
 class NBody():
     def __init__(self, bodies, t_prop, dt=1):
         self.bodies = bodies
         self.t_prop = t_prop
         self.dt = dt
+        
+        self.timesteps = []
 
     def run(self):
         
@@ -133,6 +138,62 @@ class NBody():
             # progress bar of the simulation
             percent = t / self.t_prop * 100
             print(f"\r{percent:.2f}%", end="")
-
+            
+            self.timesteps.append(t)
             t += self.dt
+            
         print()
+
+    
+    def calculate_angular_momentum_mag(self):
+
+        h = []
+        for i in range(len(self.bodies[0].time)):
+            h_step = 0
+            for body in self.bodies:
+                r = body._r_history[i].astype(np.float64)
+                v = body._v_history[i].astype(np.float64)
+                h_step += np.linalg.norm(astro.calculate_angular_momentum(r, v))
+            h.append(h_step)
+        
+        return h
+
+
+def NBodyODE(t, state, masses):
+    """Calculates the state derivative for the NBody problem
+    
+    Args:
+        t (float): Time
+        state (arr): State vector with form:
+            [r_1_x, r_1_y, r_1_z, v_1_x, v_1_y, v_1_z, r_2_x, r_2_y, r_2_z, v_2_x, v_2_y, v_2_z, ...]
+        masses (arr): Masses of the bodies in the same order as the state vector:
+            [m_1, m_2, ...]
+    
+    """
+    
+    state = state.reshape((len(masses), 6))
+    state_der = np.zeros((len(masses), 6))
+    for i, body in enumerate(state):
+        _r_body = np.array([state[i][0], state[i][1], state[i][2]])
+        _v_body = np.array([state[i][3], state[i][4], state[i][5]])
+        _F = np.array([0., 0., 0.])
+        for j, other_body in enumerate(state):
+            if i != j:
+                _r_other_body = np.array([state[j][0], state[j][1], state[j][2]])
+                _v_other_body = np.array([state[j][3], state[j][4], state[j][5]])
+                _r_to_body = _r_body - _r_other_body
+                force = -astro.G * masses[j] * masses[i] / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
+                _F = np.add(_F, force)
+        _a = _F / masses[i]
+        state_der[i][0] = _v_body[0]
+        state_der[i][1] = _v_body[1]
+        state_der[i][2] = _v_body[2]
+        state_der[i][3] = _a[0]
+        state_der[i][4] = _a[1]
+        state_der[i][5] = _a[2]
+
+    return state_der.flatten()
+
+
+    
+

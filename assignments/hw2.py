@@ -3,6 +3,7 @@
 # ENAE601 - UMD
 # Description: HW2 assignment problems
 
+import time
 import astro
 import math
 import numpy as np
@@ -13,13 +14,13 @@ from matplotlib.animation import FuncAnimation
 
 def num_1():
     bodies = [
-        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.])),
-        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.])),
-        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.])),
-        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.])),
+        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.]), name="Body 1"),
+        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.]), name="Body 2"),
+        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.]), name="Body 3"),
+        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.]), name="Body 4")
     ]
 
-    sim = astro.NBody(bodies, 20000, .01)
+    sim = astro.NBody(bodies, 10000, .5)
     sim.run()
 
     # plot the positions of the bodies in 3d
@@ -37,7 +38,6 @@ def num_1():
     ax.set_ylabel('y (m)')
     ax.set_zlabel('z (m)')
 
-
     position_comps_fig, axes = plt.subplots(3, 1)
 
     # plot the x, y, and z components of the position of the bodies in subplots
@@ -48,35 +48,55 @@ def num_1():
 
         for body in sim.bodies:
             axes[i].plot(body.time, [j[i] for j in body._r_history])
+    
+    plt.tight_layout()
+
+    mom_fig = plt.figure()
+    ax = plt.axes()
+    ax.plot(bodies[0].time, sim.calculate_angular_momentum_mag())
 
     plt.show()
 
 
-def num_1_animated():
-
+def num_1_ode():
     bodies = [
-        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.])),
-        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.])),
-        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.])),
-        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.])),
+        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.]), name="Body 1"),
+        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.]), name="Body 2"),
+        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.]), name="Body 3"),
+        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.]), name="Body 4")
     ]
 
-    sim = astro.NBody(bodies, 5, .1)
-    sim.run()
-
-    # plot the positions of the bodies in 3d over time with animation
+    init_state = np.array([body.get_state() for body in bodies])
+    masses = [body.mass for body in bodies] 
+    tol = 10**-13
+    T = 20000
+    
+    print("Solving with RK45")
+    t_start = time.time()
+    solver = solve_ivp(astro.NBodyODE, (0, 20000), init_state.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol)
+    print(f"Time to Propgate: {time.time() - t_start}")
+    
+    # plot the positions of the bodies in 3d
     fig = plt.figure()
     ax = plt.axes(projection='3d')
-    def animate(j):
-        ax.clear()
-        for body in sim.bodies:
-            x = [i[0] for i in body._r_history]
-            y = [i[1] for i in body._r_history]
-            z = [i[2] for i in body._r_history]
+    for i in range(0, len(solver.y), 6):
+        x = solver.y[i]
+        y = solver.y[i+1]
+        z = solver.y[i+2]
 
-            ax.plot(x[:j], y[:j], z[:j])
+        ax.plot(x, y, z)
 
-    anim = FuncAnimation(fig, animate, frames=200, interval=20)
+    fig, axes = plt.subplots(3, 1)
+    # plot x, y, and z components of the position of the bodies in subplots
+    for i, axis in enumerate(['x', 'y', 'z']):
+        axes[i].set_title(f'Position of bodies in {axis} direction')
+        axes[i].set_xlabel('time (s)')
+        axes[i].set_ylabel(f'{axis} (m)')
+
+        for j in range(i, len(solver.y), 6):
+            axes[i].plot(solver.t, solver.y[j])
+    
+    plt.tight_layout()
     plt.show()
 
 
@@ -241,4 +261,4 @@ def num_5():
 
 
 if __name__ == "__main__":
-    num_1()
+    num_1_ode()
