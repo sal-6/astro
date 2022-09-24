@@ -8,6 +8,7 @@ import math
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 
 def num_1():
@@ -18,7 +19,7 @@ def num_1():
         astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.])),
     ]
 
-    sim = astro.NBody(bodies, 20000, .1)
+    sim = astro.NBody(bodies, 20000, .01)
     sim.run()
 
     # plot the positions of the bodies in 3d
@@ -30,6 +31,52 @@ def num_1():
         z = [i[2] for i in body._r_history]
 
         ax.plot(x, y, z)
+
+    # label the axes
+    ax.set_xlabel('x (m)')
+    ax.set_ylabel('y (m)')
+    ax.set_zlabel('z (m)')
+
+
+    position_comps_fig, axes = plt.subplots(3, 1)
+
+    # plot the x, y, and z components of the position of the bodies in subplots
+    for i, axis in enumerate(['x', 'y', 'z']):
+        axes[i].set_title(f'Position of bodies in {axis} direction')
+        axes[i].set_xlabel('time (s)')
+        axes[i].set_ylabel(f'{axis} (m)')
+
+        for body in sim.bodies:
+            axes[i].plot(body.time, [j[i] for j in body._r_history])
+
+    plt.show()
+
+
+def num_1_animated():
+
+    bodies = [
+        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.])),
+        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.])),
+        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.])),
+        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.])),
+    ]
+
+    sim = astro.NBody(bodies, 5, .1)
+    sim.run()
+
+    # plot the positions of the bodies in 3d over time with animation
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    def animate(j):
+        ax.clear()
+        for body in sim.bodies:
+            x = [i[0] for i in body._r_history]
+            y = [i[1] for i in body._r_history]
+            z = [i[2] for i in body._r_history]
+
+            ax.plot(x[:j], y[:j], z[:j])
+
+    anim = FuncAnimation(fig, animate, frames=200, interval=20)
     plt.show()
 
 

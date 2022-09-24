@@ -122,6 +122,12 @@ class NBody():
                         _r_to_body = body._r_history[-1] - other_body._r_history[-1]
                         force = -astro.G * other_body.mass * body.mass / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
                         _F = np.add(_F, force)
+                        if t == 0:
+                            print(f"{body.name} is being pulled by {other_body.name} with a force of {force}")
+
+                if t == 0:
+                    print(_F)
+                    print()
                 body.step_states(_F, self.dt)
 
             # progress bar of the simulation
