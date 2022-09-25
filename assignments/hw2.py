@@ -31,12 +31,14 @@ def num_1():
         y = [i[1] for i in body._r_history]
         z = [i[2] for i in body._r_history]
 
-        ax.plot(x, y, z)
+        ax.plot(x, y, z, label=body.name)
 
     # label the axes
     ax.set_xlabel('x (m)')
     ax.set_ylabel('y (m)')
     ax.set_zlabel('z (m)')
+    ax.set_title("Paths of the Bodies")
+    ax.legend(loc="best")
 
     position_comps_fig, axes = plt.subplots(3, 1)
 
@@ -73,7 +75,7 @@ def num_1_ode():
     
     print("Solving with RK45")
     t_start = time.time()
-    solver = solve_ivp(astro.NBodyODE, (0, 20000), init_state.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol)
+    solver = solve_ivp(astro.NBodyODE, (0, T), init_state.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol)
     print(f"Time to Propgate: {time.time() - t_start}")
     
     # plot the positions of the bodies in 3d
@@ -84,7 +86,14 @@ def num_1_ode():
         y = solver.y[i+1]
         z = solver.y[i+2]
 
-        ax.plot(x, y, z)
+        ax.plot(x, y, z, label=f"Body {i//6 + 1}")
+
+    # label the axes
+    ax.set_xlabel('x (m)')
+    ax.set_ylabel('y (m)')
+    ax.set_zlabel('z (m)')
+    ax.set_title("Paths of the Bodies")
+    ax.legend(loc="best")
 
     fig, axes = plt.subplots(3, 1)
     # plot x, y, and z components of the position of the bodies in subplots
@@ -94,9 +103,59 @@ def num_1_ode():
         axes[i].set_ylabel(f'{axis} (m)')
 
         for j in range(i, len(solver.y), 6):
-            axes[i].plot(solver.t, solver.y[j])
-    
+            axes[i].plot(solver.t, solver.y[j], label=f"Body {j//6 + 1}")
+            axes[i].legend(loc="best")
+
     plt.tight_layout()
+
+    # calculate the magnitude of the angular momentum of the system at each time step
+    mom = []
+    for i in range(len(solver.t)):
+        mom_step = 0
+        for j in range(0, len(solver.y), 6):
+            _r = np.array([solver.y[j][i], solver.y[j+1][i], solver.y[j+2][i]])
+            _v = np.array([solver.y[j+3][i], solver.y[j+4][i], solver.y[j+5][i]])
+            mom_step += np.linalg.norm(astro.calculate_angular_momentum(_r, _v))
+        mom.append(mom_step)
+
+    # calculate deviation on momentum from initial value at each step
+    mom_dev = []
+    for i in mom:
+        mom_dev.append(mom[0] - i)
+    
+    fig, axes = plt.subplots(2, 1)
+
+    axes[0].plot(solver.t, mom)
+    axes[0].set_xlabel("Time (s)")
+    axes[0].set_ylabel("Specific Angular Momentum (m^2/s/kg")
+    axes[0].set_title("Total Angular Momentum of System Vs. Time")
+    axes[1].plot(solver.t, mom_dev)
+    axes[1].set_xlabel("Time (s)")
+    axes[1].set_ylabel("Specific Angular Momentum (m^2/s/kg")
+    axes[1].set_title("Deviation in Total Angular Momentum of System Vs. Time")
+
+    plt.tight_layout()
+
+    # calculate the total energy of the system at each time step.
+    # Needs clarification on what the total energy is
+    """ energy = []
+    for timestep in range(len(solver.t)):
+        energy_step = 0
+        for i in range(0, len(solver.y), 6):
+            _r1 = np.array([solver.y[i][timestep], solver.y[i+1][timestep], solver.y[i+2][timestep]])
+            _v1 = np.array([solver.y[i+3][timestep], solver.y[i+4][timestep], solver.y[i+5][timestep]])
+            potential_energy = 0
+            for j in range(0, len(solver.y), 6):
+                if i != j:
+                    _r2 = np.array([solver.y[j][timestep], solver.y[j+1][timestep], solver.y[j+2][timestep]])
+                    _v2 = np.array([solver.y[j+3][timestep], solver.y[j+4][timestep], solver.y[j+5][timestep]])
+                    U = astro.calculate_potential_energy(masses[i], masses[j], _r1, _r2)
+                    potential_energy += U
+            kinetic_energy = astro.calculate_kinetic_energy(masses[i], _v1)
+            total_energy = potential_energy + kinetic_energy
+            energy_step += kinetic_energy + potential_energy
+        energy.append(energy_step) """
+
     plt.show()
 
 

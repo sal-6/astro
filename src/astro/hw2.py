@@ -194,6 +194,12 @@ def NBodyODE(t, state, masses):
 
     return state_der.flatten()
 
-
     
+def calculate_potential_energy(mass1, mass2, _r1, _r2):
+    return -1 * astro.G * mass1 * mass2 / np.linalg.norm(_r1 - _r2)
+
+
+def calculate_kinetic_energy(mass, _v):
+    return 0.5 * mass * np.linalg.norm(_v) ** 2
+
 
