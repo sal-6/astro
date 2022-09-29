@@ -1,7 +1,7 @@
 #############################################################################
 # Sal Aslam
 # ENAE601 - UMD
-# Description: Utilities writen for homewark 2
+# Description: Utilities written for homewaork 2
 
 import math
 import numpy as np
@@ -83,80 +83,6 @@ def calculate_eccentricity_vector(_r, _v, mu=astro.MU_EARTH):
 
     _e = 1 / mu * ((np.linalg.norm(_v) ** 2 - mu / np.linalg.norm(_r)) * _r - (np.dot(_r, _v)) * _v)
     return _e
-
-
-class Body():
-    def __init__(self, mass, _r_0, _v_0, name=""):
-        self.name = name
-        self.mass = mass
-        self._r_0 = _r_0
-        self._v_0 = _v_0
-        
-        self._r_history = [_r_0]
-        self._v_history = [_v_0]
-        self.time = [0]
-
-    def get_state(self):
-        return self._r_history[-1].tolist() + self._v_history[-1].tolist()
-
-    def step_states(self, _F, dt):
-        _a = _F / self.mass
-        self._v_history.append(self._v_history[-1] + _a * dt)
-        self._r_history.append(self._r_history[-1] + self._v_history[-1] * dt)
-        self.time.append(self.time[-1] + dt)
-
-
-# ! IMPORTANT: This does not work. Need to figure out why ...
-class NBody():
-    def __init__(self, bodies, t_prop, dt=1):
-        self.bodies = bodies
-        self.t_prop = t_prop
-        self.dt = dt
-        
-        self.timesteps = []
-
-    def run(self):
-        
-        t = 0
-        while t < self.t_prop:
-            for body in self.bodies:
-                # calculate net force due to other bodies
-                _F = np.array([0., 0., 0.])
-                for other_body in self.bodies:
-                    if other_body != body:
-                        _r_to_body = body._r_history[-1] - other_body._r_history[-1]
-                        force = -astro.G * other_body.mass * body.mass / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
-                        _F = np.add(_F, force)
-                        if t == 0:
-                            print(f"{body.name} is being pulled by {other_body.name} with a force of {force}")
-
-                if t == 0:
-                    print(_F)
-                    print()
-                body.step_states(_F, self.dt)
-
-            # progress bar of the simulation
-            percent = t / self.t_prop * 100
-            print(f"\r{percent:.2f}%", end="")
-            
-            self.timesteps.append(t)
-            t += self.dt
-            
-        print()
-
-    
-    def calculate_angular_momentum_mag(self):
-
-        h = []
-        for i in range(len(self.bodies[0].time)):
-            h_step = 0
-            for body in self.bodies:
-                r = body._r_history[i].astype(np.float64)
-                v = body._v_history[i].astype(np.float64)
-                h_step += np.linalg.norm(astro.calculate_angular_momentum(r, v))
-            h.append(h_step)
-        
-        return h
 
 
 def NBodyODE(t, state, masses):

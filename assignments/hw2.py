@@ -20,54 +20,6 @@ def num_1():
         astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.]), name="Body 4")
     ]
 
-    sim = astro.NBody(bodies, 10000, .5)
-    sim.run()
-
-    # plot the positions of the bodies in 3d
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    for body in sim.bodies:
-        x = [i[0] for i in body._r_history]
-        y = [i[1] for i in body._r_history]
-        z = [i[2] for i in body._r_history]
-
-        ax.plot(x, y, z, label=body.name)
-
-    # label the axes
-    ax.set_xlabel('x (m)')
-    ax.set_ylabel('y (m)')
-    ax.set_zlabel('z (m)')
-    ax.set_title("Paths of the Bodies")
-    ax.legend(loc="best")
-
-    position_comps_fig, axes = plt.subplots(3, 1)
-
-    # plot the x, y, and z components of the position of the bodies in subplots
-    for i, axis in enumerate(['x', 'y', 'z']):
-        axes[i].set_title(f'Position of bodies in {axis} direction')
-        axes[i].set_xlabel('time (s)')
-        axes[i].set_ylabel(f'{axis} (m)')
-
-        for body in sim.bodies:
-            axes[i].plot(body.time, [j[i] for j in body._r_history])
-    
-    plt.tight_layout()
-
-    mom_fig = plt.figure()
-    ax = plt.axes()
-    ax.plot(bodies[0].time, sim.calculate_angular_momentum_mag())
-
-    plt.show()
-
-
-def num_1_ode():
-    bodies = [
-        astro.Body(10 ** 24, np.array([2 * 10 ** 6, 0., 0.]), np.array([0., 5000., 0.]), name="Body 1"),
-        astro.Body(10 ** 24, np.array([-2 * 10 ** 6, 0., 0.]), np.array([0., -5000., 0.]), name="Body 2"),
-        astro.Body(10 ** 24, np.array([4 * 10 ** 6, 0., 0.]), np.array([0., -5000., 3000.]), name="Body 3"),
-        astro.Body(10 ** 24, np.array([-4 * 10 ** 6, 0., 0.]), np.array([0., 5000., -3000.]), name="Body 4")
-    ]
-
     init_state = np.array([body.get_state() for body in bodies])
     masses = [body.mass for body in bodies] 
     tol = 10**-13
@@ -75,7 +27,7 @@ def num_1_ode():
     
     print("Solving with RK45")
     t_start = time.time()
-    solver = solve_ivp(astro.NBodyODE, (0, T), init_state.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol)
+    solver = solve_ivp(astro.NBodyODE, (0, T), init_state.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 100))
     print(f"Time to Propgate: {time.time() - t_start}")
     
     # plot the positions of the bodies in 3d
@@ -135,26 +87,35 @@ def num_1_ode():
     axes[1].set_title("Deviation in Total Angular Momentum of System Vs. Time")
 
     plt.tight_layout()
+    
+    print(solver.y.shape)
 
     # calculate the total energy of the system at each time step.
-    # Needs clarification on what the total energy is
-    """ energy = []
+    energy = []
     for timestep in range(len(solver.t)):
-        energy_step = 0
-        for i in range(0, len(solver.y), 6):
-            _r1 = np.array([solver.y[i][timestep], solver.y[i+1][timestep], solver.y[i+2][timestep]])
-            _v1 = np.array([solver.y[i+3][timestep], solver.y[i+4][timestep], solver.y[i+5][timestep]])
+        emergy_step = 0
+        # get state at timestep
+        body_states = solver.y[:, timestep].reshape((len(bodies), 6))
+        for i, body in enumerate(body_states):
+            # calculate potential energy
             potential_energy = 0
-            for j in range(0, len(solver.y), 6):
+            for j, other_body in enumerate(body_states):
                 if i != j:
-                    _r2 = np.array([solver.y[j][timestep], solver.y[j+1][timestep], solver.y[j+2][timestep]])
-                    _v2 = np.array([solver.y[j+3][timestep], solver.y[j+4][timestep], solver.y[j+5][timestep]])
-                    U = astro.calculate_potential_energy(masses[i], masses[j], _r1, _r2)
-                    potential_energy += U
-            kinetic_energy = astro.calculate_kinetic_energy(masses[i], _v1)
-            total_energy = potential_energy + kinetic_energy
-            energy_step += kinetic_energy + potential_energy
-        energy.append(energy_step) """
+                    potential_energy += astro.calculate_potential_energy(masses[i], masses[j], body[:3], other_body[:3])
+            # calculate kinetic energy
+            kinetic_energy = astro.calculate_kinetic_energy(masses[i], body[3:])
+            emergy_step += potential_energy + kinetic_energy
+        energy.append(emergy_step)
+    
+
+        
+    fig = plt.figure()
+    ax = plt.axes()
+    
+    ax.plot(solver.t, energy)
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Energy (J)")
+    ax.set_title("Total Energy of System Vs. Time")
 
     plt.show()
 
@@ -320,4 +281,5 @@ def num_5():
 
 
 if __name__ == "__main__":
-    num_1_ode()
+    num_1()
+    num_5()
