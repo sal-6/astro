@@ -84,6 +84,27 @@ def calculate_eccentricity_vector(_r, _v, mu=astro.MU_EARTH):
     _e = 1 / mu * ((np.linalg.norm(_v) ** 2 - mu / np.linalg.norm(_r)) * _r - (np.dot(_r, _v)) * _v)
     return _e
 
+class Body():
+    def __init__(self, mass, _r_0, _v_0, name=""):
+        self.name = name
+        self.mass = mass
+        self._r_0 = _r_0
+        self._v_0 = _v_0
+        
+        self._r_history = [_r_0]
+        self._v_history = [_v_0]
+        self.time = [0]
+
+    def get_state(self):
+        return self._r_history[-1].tolist() + self._v_history[-1].tolist()
+
+    def step_states(self, _F, dt):
+        _a = _F / self.mass
+        self._v_history.append(self._v_history[-1] + _a * dt)
+        self._r_history.append(self._r_history[-1] + self._v_history[-1] * dt)
+        self.time.append(self.time[-1] + dt)
+
+
 
 def NBodyODE(t, state, masses):
     """Calculates the state derivative for the NBody problem
