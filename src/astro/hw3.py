@@ -55,7 +55,7 @@ def calculate_lamberts_constants(phi):
     return c2, c3
 
 
-def lamberts(_r0, _rf, del_t, tm):
+def lamberts(_r0, _rf, del_t, tm, mu):
     """
     Lamberts solver
 
@@ -83,8 +83,35 @@ def lamberts(_r0, _rf, del_t, tm):
     phi_up = 4 * math.pi ** 2
     phi_low = - 4 * math.pi
 
-    while True:
+    dt_n = 999999
+
+    while abs(dt_n - del_t) > 10 ** -6:
         y_n = np.linalg.norm(_r0) + np.linalg.norm(_rf) + (A * (phi_n * c_3 - 1)) / (math.sqrt(c_2))
 
-        if A > 0 and y < 0:
-            return 
+        # consider check fror phi_low here
+
+        x_n = math.sqrt(y_n / c_2)
+
+        dt_n = (x_n ** 3 * c_3 + A * math.sqrt(y_n)) / (math.sqrt(mu))
+
+        if dt_n <= del_t:
+            phi_low = phi_n
+
+        else:
+            phi_up = phi_n
+
+        phi_n = (phi_up + phi_low) / 2
+
+        c_2, c_3 = calculate_lamberts_constants(phi_n)
+
+    f = 1 - (y_n / np.linalg.norm(_r0))
+    g = A * math.sqrt(y_n / mu)
+    g_dot = 1 - (y_n / np.linalg.norm(_rf))
+
+    v0 = (_rf - f * _r0) / g
+    vf = (g_dot * _rf - _r0) / g
+
+    return v0, vf
+
+        
+

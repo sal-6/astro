@@ -85,13 +85,50 @@ def num_1():
 
 def num_2():
 
+    mu_sun = 132712440018
+
+    r_mars = np.array([-128169484.29, -190592298.12, -844880.03])
+    v_mars = np.array([21.02, -11.45, -0.76])
+
+    r_jupiter = np.array([483382929.98, -587464623.05, -8381282.40])
+    v_jupiter = np.array([9.93, 8.92, -0.26])
+
+    _v0, _vf = astro.lamberts(r_mars, r_jupiter, 830 * 24 * 60 * 60, 1, mu_sun)
+
+    print(f"Initial velocity: {_v0}")
+    print(f"Final velocity: {_vf}")
+
+
+def num_3():
+
+    mu_sun = 132712440042 * 10 ** 9
+
     r_mars = np.array([-128169484.29 * 10 ** 3, -190592298.12 * 10 ** 3, -844880.03 * 10 ** 3])
     v_mars = np.array([21.02 * 10 ** 3, -11.45 * 10 ** 3, -0.76 * 10 ** 3])
 
     r_jupiter = np.array([483382929.98 * 10 ** 3, -587464623.05 * 10 ** 3, -8381282.40 * 10 ** 3])
     v_jupiter = np.array([9.93 * 10 ** 3, 8.92 * 10 ** 3, -0.26 * 10 ** 3])
 
-    _v0, _vf = astro.lamberts(r_mars, r_jupiter, 830 * 24 * 60 * 60, 1)
+    _v0, _vf = astro.lamberts(r_mars, r_jupiter, 830 * 24 * 60 * 60, 1, mu_sun)
+
+    # initial state for spacecraft leaving mars
+    # postition of mars
+    # velocity from lamberts
+    init_state = np.array([r_mars[0], r_mars[1], r_mars[2], _v0[0], _v0[1], _v0[2]])
+
+    # propogate the orbit
+    orbit = solve_ivp(astro.propogate_2BP, [0, 830 * 24 * 60 * 60], init_state, args=(mu_sun,), method="RK45", atol=10**-13, rtol=10**-13, t_eval=np.linspace(0, 830 * 24 * 60 * 60, 830 * 24 * 60 * 60), dense_output=True)
+
+    # compare the final position to the position of jupiter
+    print(f"Final position: {orbit.y[:3, -1]}")
+    print(f"Jupiter position: {r_jupiter}")
+    print(f"Error in position: {orbit.y[:3, -1] - r_jupiter}")
+    print(f"Percent relative error: {abs(orbit.y[:3, -1] - r_jupiter) / r_jupiter * 100}%")
+
+
+def num_4():
+
+    pass
 
 if __name__ == "__main__":
-    num_2()
+    num_1()

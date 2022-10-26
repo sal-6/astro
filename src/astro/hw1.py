@@ -103,7 +103,7 @@ def standard_to_cartesian(a, e, i, raan, w, u, mu=astro.MU_EARTH):
     return [_pos, _vel]
 
 
-def propogate_2BP(t, state):
+def propogate_2BP(t, state, mu=astro.MU_EARTH):
     """State space representation of Newton's Law of Gravitation. Only implemented for Earth.
         Selected state variables are [r_x, r_y, r_z, v_x, v_y, v_z]
 
@@ -120,7 +120,7 @@ def propogate_2BP(t, state):
     _v = state[3:]
 
     # a = - mu / norm(r) ^ 3 * r
-    _a = - astro.MU_EARTH / (np.linalg.norm(_r) ** 3) * _r
+    _a = - mu / (np.linalg.norm(_r) ** 3) * _r
 
     val = np.array([_v[0], _v[1], _v[2], _a[0], _a[1], _a[2]])
     return val
