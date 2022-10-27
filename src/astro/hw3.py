@@ -62,8 +62,8 @@ def lamberts(_r0, _rf, del_t, tm, mu):
     Args:
         _r0 (arr): Initial position vector
         _rf (arr): Final position vector
-        tof (float): Time of flight
-        dom (int): Direction of motion (1 or -1)
+        del_t (float): Time of flight
+        tm (int): Direction of motion (1 or -1)
 
     Returns:
         (arr): initial velocity vector

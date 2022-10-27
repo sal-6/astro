@@ -31,7 +31,7 @@ def num_1():
     r_0 = np.linalg.norm(_r)
     v_0 = np.linalg.norm(_v)
 
-    t_escape = v_0 / a_t * (1 - ((30 * a_t ** 2 * r_0 **2) / (v_0 ** 4)) ** (1/8))
+    t_escape = v_0 / a_t * (1 - ((20 * a_t ** 2 * r_0 **2) / (v_0 ** 4)) ** (1/8))
     
     print(f"Initial r: {_r}")
     print(f"Initial v: {_v}")
@@ -120,15 +120,64 @@ def num_3():
     orbit = solve_ivp(astro.propogate_2BP, [0, 830 * 24 * 60 * 60], init_state, args=(mu_sun,), method="RK45", atol=10**-13, rtol=10**-13, t_eval=np.linspace(0, 830 * 24 * 60 * 60, 830 * 24 * 60 * 60), dense_output=True)
 
     # compare the final position to the position of jupiter
-    print(f"Final position: {orbit.y[:3, -1]}")
+    print("Short way:")
+    print(f"Final position from 2BP: {orbit.y[:3, -1]}")
     print(f"Jupiter position: {r_jupiter}")
+    print()
     print(f"Error in position: {orbit.y[:3, -1] - r_jupiter}")
     print(f"Percent relative error: {abs(orbit.y[:3, -1] - r_jupiter) / r_jupiter * 100}%")
+    print()
+    print("-----------------------------------------")
+    print()
+    # velocity of spacecraft at jupiter
+    print(f"Final velocity from 2BP: {orbit.y[3:, -1]}")
+    # compare the final velocity to the velocity of lamberts
+    print(f"Lamberts velocity at Jupiter: {_vf}")
+    
+    print()
+    
+    # calculate the error in velocity
+    print(f"Error in velocity: {orbit.y[3:, -1] - _vf}")
+    print(f"Percent relative error: {abs(orbit.y[3:, -1] - _vf) / _vf * 100}%")
 
-
+    
+    _v0_long, _vf_long = astro.lamberts(r_mars, r_jupiter, 830 * 24 * 60 * 60, -1, mu_sun)
+    
+    # initial state for spacecraft leaving mars
+    # postition of mars
+    # velocity from lamberts
+    init_state = np.array([r_mars[0], r_mars[1], r_mars[2], _v0_long[0], _v0_long[1], _v0_long[2]])
+    
+    # propogate the orbit
+    orbit = solve_ivp(astro.propogate_2BP, [0, 830 * 24 * 60 * 60], init_state, args=(mu_sun,), method="RK45", atol=10**-13, rtol=10**-13, t_eval=np.linspace(0, 830 * 24 * 60 * 60, 830 * 24 * 60 * 60), dense_output=True)
+    
+    # compare the final position to the position of jupiter
+    print()
+    print("Long way:")
+    print(f"Final position from 2BP: {orbit.y[:3, -1]}")
+    print(f"Jupiter position: {r_jupiter}")
+    print()
+    print(f"Error in position: {orbit.y[:3, -1] - r_jupiter}")
+    print(f"Percent relative error: {abs(orbit.y[:3, -1] - r_jupiter) / r_jupiter * 100}%")
+    print()
+    print("-----------------------------------------")
+    print()
+    # velocity of spacecraft at jupiter
+    print(f"Final velocity from 2BP: {orbit.y[3:, -1]}")
+    # compare the final velocity to the velocity of lamberts
+    print(f"Lamberts velocity at Jupiter: {_vf_long}")
+    
+    print()
+    
+    # calculate the error in velocity
+    print(f"Error in velocity: {orbit.y[3:, -1] - _vf_long}")
+    print(f"Percent relative error: {abs(orbit.y[3:, -1] - _vf_long) / _vf_long * 100}%")
+    
+    
+    
 def num_4():
 
     pass
 
 if __name__ == "__main__":
-    num_1()
+    num_3()
