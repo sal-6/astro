@@ -177,7 +177,45 @@ def num_3():
     
 def num_4():
 
-    pass
+    mu_sun = 132712440042 * 10 ** 9
+
+    r_mars = np.array([-128169484.29 * 10 ** 3, -190592298.12 * 10 ** 3, -844880.03 * 10 ** 3])
+    v_mars = np.array([21.02 * 10 ** 3, -11.45 * 10 ** 3, -0.76 * 10 ** 3])
+
+    r_jupiter = np.array([483382929.98 * 10 ** 3, -587464623.05 * 10 ** 3, -8381282.40 * 10 ** 3])
+    v_jupiter = np.array([9.93 * 10 ** 3, 8.92 * 10 ** 3, -0.26 * 10 ** 3])
+
+    
+    tof = []
+    long_way = []
+    short_way = []
+    
+    # loop over times of flight from 1 year to 3 years in 1 day increments and store the delta v for each
+    # for both the long way and short way
+    # also store the time of flight
+    for i in range(365, 1095, 1):
+        _v0, _vf = astro.lamberts(r_mars, r_jupiter, i * 24 * 60 * 60, 1, mu_sun)
+        _v0_long, _vf_long = astro.lamberts(r_mars, r_jupiter, i * 24 * 60 * 60, -1, mu_sun)
+        
+        tof.append(i)
+        long_way.append(np.linalg.norm(_vf_long - v_jupiter) + np.linalg.norm(_v0_long - v_mars))
+        short_way.append(np.linalg.norm(_vf - v_jupiter) + np.linalg.norm(_v0 - v_mars))
+        
+        # progress bar
+        print(f"{i - 365} / {1095 - 365}", end="\r")
+        
+        
+    # plot the results
+    plt.plot(tof, long_way, label="Long Way")
+    plt.plot(tof, short_way, label="Short Way")
+    plt.xlabel("Time of Flight (days)")
+    plt.ylabel("Delta V (m/s)")
+    plt.title("Delta V vs Time of Flight")
+    plt.legend()
+    plt.show()
+    
+    
+    
 
 if __name__ == "__main__":
-    num_3()
+    num_4()
