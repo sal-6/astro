@@ -92,9 +92,34 @@ def num_3():
         inert_primary_x, inert_primary_y, inert_primary_z = astro.rotating_to_inertial_for_const(-mu, 0, 0, trajectory.t)
         inert_secondary_x, inert_secondary_y, inert_secondary_z = astro.rotating_to_inertial_for_const(1-mu, 0, 0, trajectory.t)
 
-        # plot the intertial frame trajectory
         fig = plt.figure()
-        ax = plt.axes(projection='3d')
+
+        # create a 3d subplot
+        ax = fig.add_subplot(121, projection='3d')
+
+        # plot the orbit
+        #fig = plt.figure()
+        #ax = plt.axes(projection='3d')
+        ax.plot3D(trajectory.y[0], trajectory.y[1], trajectory.y[2], linewidth=1, label="Orbit")
+        ax.set_xlabel('x (DU)', size=10)
+        ax.set_ylabel('y (DU)', size=10)
+        ax.set_zlabel('z (DU)', size=10)
+        ax.set_title("Orbit " + orbit["id"] + " Trajectory (Rotating Frame)")
+
+        # plot primary and secondary bodies at -mu and 1-mu
+        ax.scatter(-mu, 0, 0, color="orange", s=10, label="Primary Body")
+        ax.scatter(1-mu, 0, 0, color="blue", s=4, label="Secondary Body")
+
+        axisEqual3D(ax)
+
+        ax.legend()
+
+
+        ax = fig.add_subplot(122, projection='3d')
+
+        # plot the intertial frame trajectory
+        #fig = plt.figure()
+        #ax = plt.axes(projection='3d')
         ax.plot3D(inert_x, inert_y, inert_z, linewidth=1, label="Orbit")
         ax.plot3D(inert_primary_x, inert_primary_y, inert_primary_z, linewidth=1, label="Primary Body")
         ax.plot3D(inert_secondary_x, inert_secondary_y, inert_secondary_z, linewidth=1, label="Secondary Body")
@@ -106,23 +131,9 @@ def num_3():
 
         axisEqual3D(ax)
 
+        plt.tight_layout()
 
-        # plot the orbit
-        fig = plt.figure()
-        ax = plt.axes(projection='3d')
-        ax.plot3D(trajectory.y[0], trajectory.y[1], trajectory.y[2], linewidth=1, label="Orbit")
-        ax.set_xlabel('x (DU)', size=10)
-        ax.set_ylabel('y (DU)', size=10)
-        ax.set_zlabel('z (DU)', size=10)
-        ax.set_title("Orbit " + orbit["id"] + " Trajectory (Rotating Frame)")
-
-        # plot primary and secondary bodies at -mu and 1-mu
-        ax.scatter(-mu, 0, 0, color="orange", s=5, label="Primary Body")
-        ax.scatter(1-mu, 0, 0, color="blue", s=1, label="Secondary Body")
-
-        axisEqual3D(ax)
-
-        ax.legend()
+        
 
         print("Done Propogating Orbit " + orbit["id"] + "!")
     
@@ -168,7 +179,10 @@ def num_4():
 
         ax.legend()
 
-    plt.show()
+        # create a meshgrid of points in the rotating frame
+        x = np.linspace(-1.5, 1.5, 100)
+        y = np.linspace(-1.5, 1.5, 100)
+        X, Y = np.meshgrid(x, y)
 
 
 
@@ -185,6 +199,6 @@ def axisEqual3D(ax):
     
 
 if __name__ == "__main__":
-    num_4()
+    num_3()
 
 

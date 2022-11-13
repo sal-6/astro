@@ -90,4 +90,5 @@ def rotating_to_inertial_for_const(x, y, z, time):
         z_arr_inertial.append(pos_vec_rotated[2])
 
     return np.array(x_arr_inertial), np.array(y_arr_inertial), np.array(z_arr_inertial)
+
     
