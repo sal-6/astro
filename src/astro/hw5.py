@@ -20,7 +20,6 @@ def propogate_CRTBP(t, state, mu):
             [v_x, v_y, v_z, a_x, a_y, a_z]
     """
 
-
     x_0_dot = state[3]
     x_1_dot = state[4]
     x_2_dot = state[5]
@@ -31,6 +30,7 @@ def propogate_CRTBP(t, state, mu):
 
     val = np.array([x_0_dot, x_1_dot, x_2_dot, x_3_dot, x_4_dot, x_5_dot])
     return val
+
 
 def rotating_to_inertial(x_arr, y_arr, z_arr, time):
     """
@@ -67,6 +67,7 @@ def rotating_to_inertial(x_arr, y_arr, z_arr, time):
         z_arr_inertial.append(pos_vec_rotated[2])
 
     return np.array(x_arr_inertial), np.array(y_arr_inertial), np.array(z_arr_inertial)
+
 
 def rotating_to_inertial_for_const(x, y, z, time):
 

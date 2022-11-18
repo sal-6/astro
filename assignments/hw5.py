@@ -46,6 +46,7 @@ def num_2():
     ax.legend()
     plt.show()
 
+
 def num_3():
 
     orbits = [
@@ -78,7 +79,6 @@ def num_3():
         print("Propogating Orbit " + orbit["id"] + "...")
 
         trajectory = solve_ivp(astro.propogate_CRTBP, [0, orbit["time"]], orbit["initial_state"], args=(mu,), rtol=tol, atol=tol)
-
 
         # convert from rotational to inertial frame
         x = trajectory.y[0]
@@ -114,7 +114,6 @@ def num_3():
 
         ax.legend()
 
-
         ax = fig.add_subplot(122, projection='3d')
 
         # plot the intertial frame trajectory
@@ -133,11 +132,10 @@ def num_3():
 
         plt.tight_layout()
 
-        
-
         print("Done Propogating Orbit " + orbit["id"] + "!")
     
     plt.show()
+
 
 def num_4():
     orbits = [
@@ -155,7 +153,6 @@ def num_4():
 
     mu = 0.012150585609624
     tol = 10**-13
-
 
     for orbit in orbits:
         print("Propogating Orbit " + orbit["id"] + "...")
@@ -176,15 +173,30 @@ def num_4():
         ax.scatter(1-mu, 0, 0, color="blue", s=1, label="Secondary Body")
 
         axisEqual3D(ax)
-
+        
         ax.legend()
 
         # create a meshgrid of points in the rotating frame
-        x = np.linspace(-1.5, 1.5, 100)
-        y = np.linspace(-1.5, 1.5, 100)
+        x = np.linspace(-5.5, 5.5, 1000)
+        y = np.linspace(-5.5, 5.5, 1000)
         X, Y = np.meshgrid(x, y)
-
-
+        
+        # get the jacobi constant of the orbit
+        U = .5 * (orbit["initial_state"][0] ** 2 + orbit["initial_state"][1] ** 2) + (1 - mu) / np.sqrt((orbit["initial_state"][0] + mu) ** 2 + orbit["initial_state"][1] ** 2 + orbit["initial_state"][2] ** 2) + mu / np.sqrt((orbit["initial_state"][0] - 1 + mu) ** 2 + orbit["initial_state"][1] ** 2 + orbit["initial_state"][2] ** 2)
+        C = 2 * U - (orbit["initial_state"][3] ** 2 + orbit["initial_state"][4] ** 2 + orbit["initial_state"][5] ** 2)
+        
+        U_grid = .5 * (X ** 2 + Y ** 2) + (1 - mu) / np.sqrt((X + mu) ** 2 + Y ** 2) + mu / np.sqrt((X - 1 + mu) ** 2 + Y ** 2)
+        vel_grid = 2 * U_grid - C
+            
+        # plot the velocity field contour only where the velocity is 0 with a black line
+        ax.contour(X, Y, vel_grid, levels=[0], colors="black", linewidths=1)
+        
+        # set x and y limits it -7 and 7
+        ax.set_xlim(-2, 2)
+        ax.set_ylim(-2, 2)
+        
+    plt.show()
+        
 
 # To help with plotting
 # https://stackoverflow.com/questions/8130823/set-matplotlib-3d-plot-aspect-ratio
@@ -199,6 +211,8 @@ def axisEqual3D(ax):
     
 
 if __name__ == "__main__":
+    num_2()
     num_3()
+    num_4()
 
 
