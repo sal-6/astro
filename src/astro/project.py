@@ -6,6 +6,7 @@
 import astro
 import numpy as np
 
+
 def NBodySolarSail(t, state, masses, ss_area, ss_tilt_angle, ss_reflectivity):
     """Calculates the state derivative for the NBody problem.
     masses in kg
@@ -45,7 +46,7 @@ def NBodySolarSail(t, state, masses, ss_area, ss_tilt_angle, ss_reflectivity):
 
                 # if the body has the solar sail, then add the force of the solar sail
                 if i == 1:
-                    
+                    pass
 
         _a = _F / masses[i]
         state_der[i][0] = _v_body[0]
@@ -55,9 +56,128 @@ def NBodySolarSail(t, state, masses, ss_area, ss_tilt_angle, ss_reflectivity):
         state_der[i][4] = _a[1]
         state_der[i][5] = _a[2]
 
+    return state_der.flatten()
     
-    
+def NBodySolarSailRadial(t, state, masses, ss_area, ss_reflectivity):
+    """Calculates the state derivative for the NBody problem.
+    masses in kg
+    state in m and m/s
 
+    
+    Args:
+        t (float): Time
+        state (arr): State vector with form:
+            [r_1_x, r_1_y, r_1_z, v_1_x, v_1_y, v_1_z, r_2_x, r_2_y, r_2_z, v_2_x, v_2_y, v_2_z, ...]
+
+            In order to perform the necessary calculations, the state vector must be given with the suns states listed first,
+            followed by the spacecraft states, followed by any additional bodies in the system. It shall be structured as follows:
+
+            [r_sun_x, r_sun_y, r_sun_z, v_sun_x, v_sun_y, v_sun_z, r_sc_x, r_sc_y, r_sc_z, v_sc_x, v_sc_y, v_sc_z, ...]
+
+            
+        masses (arr): Masses of the bodies in the same order as the state vector:
+            [m_1, m_2, ...]
+    
+    """
+    
+    # perform typical n body calculations for each body included in the spacecraft
+    state = state.reshape((len(masses), 6))
+    state_der = np.zeros((len(masses), 6))
+    for i, body in enumerate(state):
+        _r_body = np.array([state[i][0], state[i][1], state[i][2]])
+        _v_body = np.array([state[i][3], state[i][4], state[i][5]])
+        _F = np.array([0., 0., 0.])
+        for j, other_body in enumerate(state):
+            if i != j:
+                _r_other_body = np.array([state[j][0], state[j][1], state[j][2]])
+                _v_other_body = np.array([state[j][3], state[j][4], state[j][5]])
+                _r_to_body = _r_body - _r_other_body
+                force = -astro.G * masses[j] * masses[i] / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
+                _F = np.add(_F, force)
+
+                # if the body has the solar sail, then add the force of the solar sail
+                if i == 1:
+                    _r_sun = np.array([state[0][0], state[0][1], state[0][2]])
+                    _r_sc = np.array([state[1][0], state[1][1], state[1][2]])
+                    _r_to_sun = _r_sun - _r_sc
+                    distance_from_sun = np.linalg.norm(_r_to_sun)
+                    
+                    F_srp = 9.1113 * 10 ** -6 * ss_area * ss_reflectivity * np.sin(90) ** 2 / distance_from_sun ** 2 * _r_to_sun
+                                         
+                    unit_vector_sun_to_sc = -1 * _r_to_sun / distance_from_sun
+                    _F_srp = F_srp * unit_vector_sun_to_sc
+                    
+                    _F = np.add(_F, _F_srp)    
+
+        _a = _F / masses[i]
+        state_der[i][0] = _v_body[0]
+        state_der[i][1] = _v_body[1]
+        state_der[i][2] = _v_body[2]
+        state_der[i][3] = _a[0]
+        state_der[i][4] = _a[1]
+        state_der[i][5] = _a[2]
+
+    return state_der.flatten()
+
+
+def NBodySolarSail45(t, state, masses, ss_area, ss_reflectivity):
+    """Calculates the state derivative for the NBody problem.
+    masses in kg
+    state in m and m/s
+
+    
+    Args:
+        t (float): Time
+        state (arr): State vector with form:
+            [r_1_x, r_1_y, r_1_z, v_1_x, v_1_y, v_1_z, r_2_x, r_2_y, r_2_z, v_2_x, v_2_y, v_2_z, ...]
+
+            In order to perform the necessary calculations, the state vector must be given with the suns states listed first,
+            followed by the spacecraft states, followed by any additional bodies in the system. It shall be structured as follows:
+
+            [r_sun_x, r_sun_y, r_sun_z, v_sun_x, v_sun_y, v_sun_z, r_sc_x, r_sc_y, r_sc_z, v_sc_x, v_sc_y, v_sc_z, ...]
+
+            
+        masses (arr): Masses of the bodies in the same order as the state vector:
+            [m_1, m_2, ...]
+    
+    """
+    
+    # perform typical n body calculations for each body included in the spacecraft
+    state = state.reshape((len(masses), 6))
+    state_der = np.zeros((len(masses), 6))
+    for i, body in enumerate(state):
+        _r_body = np.array([state[i][0], state[i][1], state[i][2]])
+        _v_body = np.array([state[i][3], state[i][4], state[i][5]])
+        _F = np.array([0., 0., 0.])
+        for j, other_body in enumerate(state):
+            if i != j:
+                _r_other_body = np.array([state[j][0], state[j][1], state[j][2]])
+                _v_other_body = np.array([state[j][3], state[j][4], state[j][5]])
+                _r_to_body = _r_body - _r_other_body
+                force = -astro.G * masses[j] * masses[i] / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
+                _F = np.add(_F, force)
+
+                # if the body has the solar sail, then add the force of the solar sail
+                if i == 1:
+                    _r_sun = np.array([state[0][0], state[0][1], state[0][2]])
+                    _r_sc = np.array([state[1][0], state[1][1], state[1][2]])
+                    _r_to_sun = _r_sun - _r_sc
+                    distance_from_sun = np.linalg.norm(_r_to_sun)
+                    
+                    F_srp = 9.1113 * 10 ** -6 * ss_area * ss_reflectivity * np.sin(np.pi / 4) ** 2 / (distance_from_sun / astro.AU_meters) ** 2
+                    unit_vector_sun_to_sc = -1 * _r_to_sun / distance_from_sun
+                    dir_moving = _v_body / np.linalg.norm(_v_body)
+                    
+                    _F_srp = F_srp * dir_moving
+                    _F = np.add(_F, _F_srp)    
+
+        _a = _F / masses[i]
+        state_der[i][0] = _v_body[0]
+        state_der[i][1] = _v_body[1]
+        state_der[i][2] = _v_body[2]
+        state_der[i][3] = _a[0]
+        state_der[i][4] = _a[1]
+        state_der[i][5] = _a[2]
 
     return state_der.flatten()
 
