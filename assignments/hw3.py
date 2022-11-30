@@ -218,4 +218,7 @@ def num_4():
     
 
 if __name__ == "__main__":
+    num_1()
+    num_2()
+    num_3()
     num_4()

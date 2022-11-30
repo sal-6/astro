@@ -94,10 +94,9 @@ def standard_to_cartesian(a, e, i, raan, w, u, mu=astro.MU_EARTH):
                       [-np.sin(rad_w), np.cos(rad_w), 0],
                       [0             , 0         , 1]])
 
-    R_eff = R_3_raan @ R_1_i @ R_3_w
+    R_eff = R_3_w @ R_1_i @ R_3_raan
     R_eff = np.matrix.transpose(R_eff)
-
-
+    
     _pos = R_eff @ _r
     _vel = R_eff @ _v
     return [_pos, _vel]

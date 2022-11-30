@@ -1,7 +1,7 @@
 #############################################################################
 # Sal Aslam
 # ENAE601 - UMD
-# Description: Utilities written for homewaork 3
+# Description: Utilities written for homewaork 4
 
 import astro
 import numpy as np
