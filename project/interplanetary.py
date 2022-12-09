@@ -11,7 +11,6 @@ from scipy.integrate import solve_ivp
 from matplotlib.patches import Circle
 
 
-
 def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, direction_vector_handle):
     """Calculates the state derivative for the NBody problem.
     masses in kg
