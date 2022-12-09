@@ -11,10 +11,6 @@ from scipy.integrate import solve_ivp
 from matplotlib.patches import Circle
 
 
-MASS_SC = 10 # kg
-AREA_SS = 14 * 14 # m^2
-REFLECTIVITY = 1
-
 
 def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, direction_vector_handle):
     """Calculates the state derivative for the NBody problem.
@@ -101,7 +97,11 @@ def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, d
 
 
 
-def nominal_vs_solarsail():
+def nominal_vs_solarsail_out():
+    
+    MASS_SC = 10 # kg
+    AREA_SS = 14 * 14 # m^2
+    REFLECTIVITY = 1
     
     sun_init_state = np.array([0, 0, 0, 0, 0, 0])
                              
@@ -263,12 +263,163 @@ def nominal_vs_solarsail():
             time_to_mars = solver.t[i]
             print("The spacecraft reaches Mars at time t = ", solver.t[i] / 60 / 60 / 24, " days")
             break
+        
+    energy_deviation = []
+    # use astro.calculate_kinetic_energy to calculate the energy deviation passing it the position and velocity vectors
+    init_energy = astro.calculate_orbital_energy(np.linalg.norm(solver.y[6:9, 0]), np.linalg.norm(solver.y[9:12, 0]), mu=1.32712440018e20)
+    print(init_energy)
+    for i in range(len(solver.t)):
+        energy_deviation.append(astro.calculate_orbital_energy(np.linalg.norm(solver.y[6:9, i]), np.linalg.norm(solver.y[9:12, i]), mu=1.32712440018e20) - init_energy)
+    
+    # plot the energy deviation
+    plt.figure()
+    plt.plot(solver.t, energy_deviation)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Specific Energy Deviation (J/kg)")
+    plt.title("Specific Energy Deviation of the Spacecraft")
+    
+    plt.show()
+    
+    
+
+def nominal_vs_solarsail_in():
+    
+    MASS_SC = 10 # kg
+    AREA_SS = 14 * 14 # m^2
+    REFLECTIVITY = 1
+    
+    sun_init_state = np.array([0, 0, 0, 0, 0, 0])
+                             
+    #sc_init_state = np.array([1.500933757963485 * 10 ** 11, 1.641110930187314 * 10 ** 9, -1.297659862625296 * 10 ** 6,
+    #                         -8.061144129033480 * 10 ** 2, 2.968583925292633 * 10 ** 4, -1.022503317926748 * 10 ** 0]) # using earth orbit as initial state
+    
+    # earth orbit with no z components
+    sc_init_state = np.array([1.500933757963485 * 10 ** 11, 1.641110930187314 * 10 ** 9, 0,
+                             -8.061144129033480 * 10 ** 2, 2.968583925292633 * 10 ** 4, 0])
+    
+    masses = np.array([1.989e30, MASS_SC])
+    
+    
+    bodies = np.array([sun_init_state, sc_init_state])
+    
+    tol = 1e-13
+    T = 365 * 24 * 60 * 60 * 5
+    
+    def apply_at_45_degree_to_sun(spacecraft_state, sun_state, curr_time):
+        _r_sun = sun_state[0:3]
+        _v_sun = sun_state[3:6]
+        
+        _r_sc = spacecraft_state[0:3]
+        _v_sc = spacecraft_state[3:6]
+        
+        _r_sun_to_sc = _r_sc - _r_sun
+        
+        _momentum_dir = np.cross(_r_sun_to_sc, _v_sc)
+        
+        _force_dir = astro.rodrigues_rotation_formula(_r_sun_to_sc, _momentum_dir, -np.pi/4)
+
+        # normalize the force direction
+        _force_dir = _force_dir / np.linalg.norm(_force_dir)
+        
+        return _force_dir
+            
+    print("Solving with RK45")
+    t_start = time.time()
+    
+    solver = solve_ivp(NBodySolarSailGeneralDirection, (0, T), bodies.flatten(), args=(masses, AREA_SS, REFLECTIVITY, apply_at_45_degree_to_sun), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 10000))
+    #nominal = solve_ivp(astro.NBodyODE, (0, T), bodies.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 1000))
+    
+    print(f"Time to Propgate: {time.time() - t_start}")
+    
+    # plot the positions of the bodies in 3d
+    fig = plt.figure()
+    #ax = plt.axes(projection='3d')
+    ax = plt.axes()
+    
+    # plot the spacecraft
+    x = solver.y[6]
+    y = solver.y[7]
+    z = solver.y[8]
+    ax.plot(x, y, linewidth=.5, label="Spacecraft", color='black')
+    
+    # plot the spacecraft nominal
+    """ x = nominal.y[6]
+    y = nominal.y[7]
+    z = nominal.y[8]
+    ax.plot(x, y, linewidth=1, label="Earth Orbit", linestyle="--", color='blue') """
+    
+    # plot a point at 0 0 0
+    ax.scatter(0, 0, color='orange')
+    
+    # plot point at initial position of spacecraft
+    ax.scatter(sc_init_state[0], sc_init_state[1], color='green')
+    
+    
+    # plot planets
+    circle = Circle((0, 0), 230892583680, label="Mars", fill=False, color='red', linestyle="--")
+    ax.add_patch(circle)
+    
+    circle = Circle((0, 0), 149600000000, label="Earth", fill=False, color='blue', linestyle="--")
+    ax.add_patch(circle)
+    
+    circle = Circle((0, 0), 1.088512e11, label="Venus", fill=False, color='yellow', linestyle="--")
+    ax.add_patch(circle)
+    
+    circle = Circle((0, 0), 63062144640, label="Mercury", fill=False, color='green', linestyle="--")
+    ax.add_patch(circle)
+    
+
+    # label the axes
+    ax.set_xlabel('x (m)')
+    ax.set_ylabel('y (m)')
+    #ax.set_zlabel('z (m)')
+    
+    # set aspect ratio to 1
+    ax.set_aspect('equal')
+    ax.set_title("Trajectory of the Spacecraft")
+
+    ax.legend(loc="best")
+    
+    #axisEqual3D(ax)
+    
+    # calculate at what time the spacecraft reaches a radius of 63062144640
+    
+    for i in range(len(solver.t)):
+        if np.linalg.norm(solver.y[6:9, i]) <= 63062144640:
+            time_to_mars = solver.t[i]
+            print("The spacecraft reaches Mercury at time t = ", solver.t[i] / 60 / 60 / 24, " days")
+            break
+        
+    # calculate at what time the spacecraft reaches a radius of 1.088512e11
+    
+    for i in range(len(solver.t)):
+        if np.linalg.norm(solver.y[6:9, i]) <= 1.088512e11:
+            time_to_venus = solver.t[i]
+            print("The spacecraft reaches Venus at time t = ", solver.t[i] / 60 / 60 / 24, " days")
+            break
+        
+    energy_deviation = []
+    # use astro.calculate_kinetic_energy to calculate the energy deviation passing it the position and velocity vectors
+    init_energy = astro.calculate_orbital_energy(np.linalg.norm(solver.y[6:9, 0]), np.linalg.norm(solver.y[9:12, 0]), mu=1.32712440018e20)
+    print(init_energy)
+    for i in range(len(solver.t)):
+        energy_deviation.append(astro.calculate_orbital_energy(np.linalg.norm(solver.y[6:9, i]), np.linalg.norm(solver.y[9:12, i]), mu=1.32712440018e20) - init_energy)
+    
+    # plot the energy deviation
+    plt.figure()
+    plt.plot(solver.t, energy_deviation)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Specific Energy Deviation (J/kg)")
+    plt.title("Specific Energy Deviation of the Spacecraft")
+    
 
     plt.show()
     
 def mass_sensitivity_analysis():
     
     masses = [.1, 1, 10, 30, 50, 100, 500]
+    AREA_SS = 14 * 14 # m^2
+    REFLECTIVITY = 1
     
     mass_vs_distance = []
     
@@ -363,6 +514,9 @@ def mass_sensitivity_analysis():
     
     
 def solar_sail_area_sensitivity_analysis():
+    
+    AREA_SS = 14 * 14 # m^2
+    REFLECTIVITY = 1
     
     areas = [2*2, 4*4, 6*6, 8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
     #areas = [2*2, 4*4, 6*6] #, 8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
@@ -573,7 +727,9 @@ def axisEqual3D(ax):
     
     
 if __name__ == "__main__":
-    #nominal_vs_solarsail()
+    #nominal_vs_solarsail_out()
+    nominal_vs_solarsail_in()
+    
     #mass_sensitivity_analysis()
     #solar_sail_area_sensitivity_analysis()
-    reflectivity_sensitivity_analysis()
+    #reflectivity_sensitivity_analysis()
