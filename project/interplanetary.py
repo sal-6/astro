@@ -95,8 +95,6 @@ def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, d
     return state_der.flatten()
 
 
-
-
 def nominal_vs_solarsail_out():
     
     MASS_SC = 10 # kg
@@ -280,7 +278,6 @@ def nominal_vs_solarsail_out():
     
     plt.show()
     
-    
 
 def nominal_vs_solarsail_in():
     
@@ -415,20 +412,28 @@ def nominal_vs_solarsail_in():
 
     plt.show()
     
+    
 def mass_sensitivity_analysis():
     
-    masses = [.1, 1, 10, 30, 50, 100, 500]
+    masses = [.1, 1, 10, 30, 50, 100]
     AREA_SS = 14 * 14 # m^2
     REFLECTIVITY = 1
     
     mass_vs_distance = []
     
     # plot the positions of the bodies in 3d
-    fig = plt.figure()
+    #fig = plt.figure()
     #ax = plt.axes(projection='3d')
-    ax = plt.axes()
+    #ax = plt.axes()
     
+    # make a 2 row 4 column plot
+    fig, axs = plt.subplots(2, 3)
+    
+    ax_row = 0
+    ax_col = 0
     for mass in masses:
+        
+        print(ax_row, ax_col)
         sun_init_state = np.array([0, 0, 0, 0, 0, 0])
                              
         #sc_init_state = np.array([1.500933757963485 * 10 ** 11, 1.641110930187314 * 10 ** 9, -1.297659862625296 * 10 ** 6,
@@ -478,25 +483,73 @@ def mass_sensitivity_analysis():
         x = solver.y[6]
         y = solver.y[7]
         z = solver.y[8]
-        ax.plot(x, y, linewidth=.5, label=f"{mass} kg")
+        #ax.plot(x, y, linewidth=.5, label=f"{mass} kg")
+        
+      
+        p = axs[ax_row, ax_col].plot(x, y, linewidth=2, label=f"{mass} kg", color='black')
+        
+        # plot a red x at the final position of the spacecraft
+        axs[ax_row, ax_col].scatter(x[-1], y[-1], color=p[0].get_color(), marker='x')
         
         mass_vs_distance.append([mass, np.linalg.norm(solver.y[6:9, -1])])
         
-    # plot a point at 0 0 0
-    ax.scatter(0, 0, color='orange')
+        # plot a point at 0 0 0
+        axs[ax_row, ax_col].scatter(0, 0, color='orange')
+        
+        # plot point at initial position of spacecraft
+        axs[ax_row, ax_col].scatter(sc_init_state[0], sc_init_state[1], color='green')
+        
+        # label the axes
+        axs[ax_row, ax_col].set_xlabel('x (m)')
+        axs[ax_row, ax_col].set_ylabel('y (m)')
+        
+        # set aspect ratio to 1
+        axs[ax_row, ax_col].set_aspect('equal')
+        axs[ax_row, ax_col].set_title("Mass = " + str(mass) + " kg")
+        
+        
+        # plot planets
+        circle = Circle((0, 0), 230892583680, label="Mars", fill=False, color='red', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 149600000000, label="Earth", fill=False, color='blue', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 63062144640, label="Mercury", fill=False, color='green', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.088512e11, label="Venus", fill=False, color='yellow', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 740829323520, label="Jupiter", fill=False, color='purple', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.470280585e12, label="Saturn", fill=False, color='brown', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 2.871e12, label="Uranus", fill=False, color='pink', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 4.495e12, label="Neptune", fill=False, color='gray', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+
+        # set bounds to the limits of the spacecraft trajectory + 10%
+        x_min = np.min(x) - np.abs(np.min(x)) * 0.1
+        x_max = np.max(x) + np.abs(np.max(x)) * 0.1
+        y_min = np.min(y) - np.abs(np.min(y)) * 0.1
+        y_max = np.max(y) + np.abs(np.max(y)) * 0.1
+        
+        axs[ax_row, ax_col].set_xlim(x_min, x_max)
+        axs[ax_row, ax_col].set_ylim(y_min, y_max)
+        
+        ax_col += 1
+        if ax_col == 3:
+            ax_row += 1
+            ax_col = 0
     
-    # plot point at initial position of spacecraft
-    ax.scatter(sc_init_state[0], sc_init_state[1], color='green')
-    
-    # label the axes
-    ax.set_xlabel('x (m)')
-    ax.set_ylabel('y (m)')
-    
-    # set aspect ratio to 1
-    ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft for Various Masses")
-    plt.legend(loc="best")
-    
+    plt.tight_layout()
+  
+        
     
     fig = plt.figure()
     ax = plt.axes()
@@ -518,16 +571,22 @@ def solar_sail_area_sensitivity_analysis():
     AREA_SS = 14 * 14 # m^2
     REFLECTIVITY = 1
     
-    areas = [2*2, 4*4, 6*6, 8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
+    areas = [8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
     #areas = [2*2, 4*4, 6*6] #, 8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
     mass = 10 # kg
     
     area_vs_distance = []
     
     # plot the positions of the bodies in 3d
-    fig = plt.figure()
+    #fig = plt.figure()
     #ax = plt.axes(projection='3d')
-    ax = plt.axes()
+    #ax = plt.axes()
+    
+    # make a 2 row 4 column plot
+    fig, axs = plt.subplots(2, 4)
+    
+    ax_row = 0
+    ax_col = 0
     
     for area in areas:
         sun_init_state = np.array([0, 0, 0, 0, 0, 0])
@@ -573,33 +632,72 @@ def solar_sail_area_sensitivity_analysis():
         
         print(f"Time to Propgate: {time.time() - t_start}")
         
-        
-        
         # plot the spacecraft
         x = solver.y[6]
         y = solver.y[7]
         z = solver.y[8]
-        p = ax.plot(x, y, linewidth=.5, label=f"{area} m^2")
+        p = axs[ax_row, ax_col].plot(x, y, linewidth=2, label=f"{area} m^2", color="black")
         
         # plot a red x at the final position of the spacecraft
-        ax.scatter(x[-1], y[-1], color=p[0].get_color(), marker='x')
+        axs[ax_row, ax_col].scatter(x[-1], y[-1], color=p[0].get_color(), marker='x')
         
         area_vs_distance.append([area, np.linalg.norm(solver.y[6:9, -1])])
         
-    # plot a point at 0 0 0
-    ax.scatter(0, 0, color='orange')
+        # plot a point at 0 0 0
+        axs[ax_row, ax_col].scatter(0, 0, color='orange')
+        
+        # plot point at initial position of spacecraft
+        axs[ax_row, ax_col].scatter(sc_init_state[0], sc_init_state[1], color='green')
     
-    # plot point at initial position of spacecraft
-    ax.scatter(sc_init_state[0], sc_init_state[1], color='green')
-    
-    # label the axes
-    ax.set_xlabel('x (m)')
-    ax.set_ylabel('y (m)')
-    
-    # set aspect ratio to 1
-    ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft for Various Areas (t = 20 years)")
-    plt.legend(loc="best")
+        # label the axes
+        axs[ax_row, ax_col].set_xlabel('x (m)')
+        axs[ax_row, ax_col].set_ylabel('y (m)')
+        
+        # set aspect ratio to 1
+        axs[ax_row, ax_col].set_aspect('equal')
+        axs[ax_row, ax_col].set_title("Area = " + str(area) + " m^2")
+        
+        # plot planets
+        circle = Circle((0, 0), 230892583680, label="Mars", fill=False, color='red', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 149600000000, label="Earth", fill=False, color='blue', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 63062144640, label="Mercury", fill=False, color='green', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.088512e11, label="Venus", fill=False, color='yellow', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 740829323520, label="Jupiter", fill=False, color='purple', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.470280585e12, label="Saturn", fill=False, color='brown', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 2.871e12, label="Uranus", fill=False, color='pink', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 4.495e12, label="Neptune", fill=False, color='gray', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+
+        # set bounds to the limits of the spacecraft trajectory + 10%
+        x_min = np.min(x) - np.abs(np.min(x)) * 0.1
+        x_max = np.max(x) + np.abs(np.max(x)) * 0.1
+        y_min = np.min(y) - np.abs(np.min(y)) * 0.1
+        y_max = np.max(y) + np.abs(np.max(y)) * 0.1
+        
+        axs[ax_row, ax_col].set_xlim(x_min, x_max)
+        axs[ax_row, ax_col].set_ylim(y_min, y_max)
+        
+        # increment the row and column
+        ax_col += 1
+        if ax_col == 4:
+            ax_col = 0
+            ax_row += 1
+        
+    #plt.legend(loc="best")
     
     
     fig = plt.figure()
@@ -619,7 +717,7 @@ def solar_sail_area_sensitivity_analysis():
 
 def reflectivity_sensitivity_analysis():
     
-    reflectivities = [.2, .4, .6, .8, 1]
+    reflectivities = [0, .2, .4, .6, .8, 1]
     #areas = [2*2, 4*4, 6*6] #, 8*8, 10*10, 12*12, 14*14, 16*16, 18*18, 20*20, 50*50]
     mass = 10 # kg
     area = 14*14 # m^2
@@ -627,9 +725,15 @@ def reflectivity_sensitivity_analysis():
     ref_vs_distance = []
     
     # plot the positions of the bodies in 3d
-    fig = plt.figure()
+    #fig = plt.figure()
     #ax = plt.axes(projection='3d')
-    ax = plt.axes()
+    #ax = plt.axes()
+    
+    # make a 2 row 3 column plot
+    fig, axs = plt.subplots(2, 3)
+    
+    ax_row = 0
+    ax_col = 0
     
     for ref in reflectivities:
         sun_init_state = np.array([0, 0, 0, 0, 0, 0])
@@ -678,27 +782,67 @@ def reflectivity_sensitivity_analysis():
         x = solver.y[6]
         y = solver.y[7]
         z = solver.y[8]
-        p = ax.plot(x, y, linewidth=.5, label=f"{area} m^2")
+        p = axs[ax_row, ax_col].plot(x, y, linewidth=2, label=f"{area} m^2", color="black")
         
         # plot a red x at the final position of the spacecraft
-        ax.scatter(x[-1], y[-1], color=p[0].get_color(), marker='x')
+        axs[ax_row, ax_col].scatter(x[-1], y[-1], color=p[0].get_color(), marker='x')
         
         ref_vs_distance.append([ref, np.linalg.norm(solver.y[6:9, -1])])
         
-    # plot a point at 0 0 0
-    ax.scatter(0, 0, color='orange')
-    
-    # plot point at initial position of spacecraft
-    ax.scatter(sc_init_state[0], sc_init_state[1], color='green')
-    
-    # label the axes
-    ax.set_xlabel('x (m)')
-    ax.set_ylabel('y (m)')
-    
-    # set aspect ratio to 1
-    ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft for Various Reflectivities (t = 20 years)")
-    plt.legend(loc="best")
+        # plot a point at 0 0 0
+        axs[ax_row, ax_col].scatter(0, 0, color='orange')
+        
+        # plot point at initial position of spacecraft
+        axs[ax_row, ax_col].scatter(sc_init_state[0], sc_init_state[1], color='green')
+        
+        # label the axes
+        axs[ax_row, ax_col].set_xlabel('x (m)')
+        axs[ax_row, ax_col].set_ylabel('y (m)')
+        
+        # set aspect ratio to 1
+        axs[ax_row, ax_col].set_aspect('equal')
+        axs[ax_row, ax_col].set_title("Reflectivity = " + str(ref))
+        
+        # plot planets
+        circle = Circle((0, 0), 230892583680, label="Mars", fill=False, color='red', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 149600000000, label="Earth", fill=False, color='blue', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 63062144640, label="Mercury", fill=False, color='green', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.088512e11, label="Venus", fill=False, color='yellow', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 740829323520, label="Jupiter", fill=False, color='purple', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 1.470280585e12, label="Saturn", fill=False, color='brown', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 2.871e12, label="Uranus", fill=False, color='pink', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+        
+        circle = Circle((0, 0), 4.495e12, label="Neptune", fill=False, color='gray', linestyle="--")
+        axs[ax_row, ax_col].add_patch(circle)
+
+        # set bounds to the limits of the spacecraft trajectory + 10%
+        x_min = np.min(x) - np.abs(np.min(x)) * 0.1
+        x_max = np.max(x) + np.abs(np.max(x)) * 0.1
+        y_min = np.min(y) - np.abs(np.min(y)) * 0.1
+        y_max = np.max(y) + np.abs(np.max(y)) * 0.1
+        
+        axs[ax_row, ax_col].set_xlim(x_min, x_max)
+        axs[ax_row, ax_col].set_ylim(y_min, y_max)
+        
+        ax_col += 1
+        if ax_col == 3:
+            ax_col = 0
+            ax_row += 1
+        
+    #plt.legend(loc="best")
     
     fig = plt.figure()
     ax = plt.axes()
@@ -728,8 +872,8 @@ def axisEqual3D(ax):
     
 if __name__ == "__main__":
     #nominal_vs_solarsail_out()
-    nominal_vs_solarsail_in()
+    #nominal_vs_solarsail_in()
     
     #mass_sensitivity_analysis()
     #solar_sail_area_sensitivity_analysis()
-    #reflectivity_sensitivity_analysis()
+    reflectivity_sensitivity_analysis()
