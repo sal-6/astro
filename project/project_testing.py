@@ -92,7 +92,7 @@ def crank_up():
     bodies = np.array([sun_init_state, sc_init_state])
     
     tol = 1e-13
-    T = 40000000 * 100
+    T = 365 * 24 * 60 * 60 * 25
     
     def apply_up(spacecraft_state, sun_state):
         _r_sun = sun_state[0:3]

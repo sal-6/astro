@@ -72,7 +72,7 @@ def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, d
             
             # get sun-sc angle
             phi = np.arccos(np.dot(_r_sun_to_sc, _force_dir) / (distance_from_sun * np.linalg.norm(_force_dir)))
-            sun_sc_angle = np.pi - phi
+            sun_sc_angle = np.pi / 2 - phi
             
             # normalize the force direction
             _force_dir = _force_dir / np.linalg.norm(_force_dir)
@@ -153,6 +153,7 @@ def nominal_vs_solarsail_out():
     y = solver.y[7]
     z = solver.y[8]
     ax.plot(x, y, linewidth=.5, label="Spacecraft", color='black')
+        
     
     # plot the spacecraft nominal
     """ x = nominal.y[6]
@@ -201,7 +202,7 @@ def nominal_vs_solarsail_out():
     
     # set aspect ratio to 1
     ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft")
+    ax.set_title("Trajectory of the Spacecraft (T = 200 years)")
 
     ax.legend(loc="best")
     
@@ -250,7 +251,7 @@ def nominal_vs_solarsail_out():
     
     # set aspect ratio to 1
     ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft")
+    ax.set_title("Trajectory of the Spacecraft (T = 200 years)")
     ax.legend(loc="best")
     
     # calculate at what time the spacecraft reaches a radius of 230892583680
@@ -260,6 +261,19 @@ def nominal_vs_solarsail_out():
             time_to_mars = solver.t[i]
             print("The spacecraft reaches Mars at time t = ", solver.t[i] / 60 / 60 / 24, " days")
             break
+    
+    for i in range(len(solver.t)):
+        if np.linalg.norm(solver.y[6:9, i]) >= 740829323520:
+            time_to_jupiter = solver.t[i]
+            print("The spacecraft reaches Jupiter at time t = ", solver.t[i] / 60 / 60 / 24, " days")
+            break
+    
+    for i in range(len(solver.t)):
+        if np.linalg.norm(solver.y[6:9, i]) >= 1.470280585e12:
+            time_to_saturn = solver.t[i]
+            print("The spacecraft reaches Saturn at time t = ", solver.t[i] / 60 / 60 / 24, " days")
+            break
+        
         
     energy_deviation = []
     # use astro.calculate_kinetic_energy to calculate the energy deviation passing it the position and velocity vectors
@@ -273,7 +287,7 @@ def nominal_vs_solarsail_out():
     plt.plot(solver.t, energy_deviation)
     plt.xlabel("Time (s)")
     plt.ylabel("Specific Energy Deviation (J/kg)")
-    plt.title("Specific Energy Deviation of the Spacecraft")
+    plt.title("Specific Energy Deviation of the Spacecraft (Outward, T = 200 years)")
     
     plt.show()
     
@@ -372,7 +386,7 @@ def nominal_vs_solarsail_in():
     
     # set aspect ratio to 1
     ax.set_aspect('equal')
-    ax.set_title("Trajectory of the Spacecraft")
+    ax.set_title("Trajectory of the Spacecraft (T = 5 years)")
 
     ax.legend(loc="best")
     
@@ -406,7 +420,7 @@ def nominal_vs_solarsail_in():
     plt.plot(solver.t, energy_deviation)
     plt.xlabel("Time (s)")
     plt.ylabel("Specific Energy Deviation (J/kg)")
-    plt.title("Specific Energy Deviation of the Spacecraft")
+    plt.title("Specific Energy Deviation of the Spacecraft (Inward, T = 5 years)")
     
 
     plt.show()
@@ -873,6 +887,6 @@ if __name__ == "__main__":
     #nominal_vs_solarsail_out()
     #nominal_vs_solarsail_in()
     
-    #mass_sensitivity_analysis()
-    #solar_sail_area_sensitivity_analysis()
+    mass_sensitivity_analysis()
+    solar_sail_area_sensitivity_analysis()
     reflectivity_sensitivity_analysis()
