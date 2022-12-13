@@ -94,215 +94,6 @@ def NBodySolarSailGeneralDirection(t, state, masses, ss_area, ss_reflectivity, d
 
     return state_der.flatten()
 
-def LiteraturePropagator(t, state, masses, ss_area, ss_reflectivity):
-    """Calculates the state derivative for the NBody problem.
-    masses in kg
-    state in m and m/s
-
-    Args:
-        t (float): Time
-        state (arr): State vector with form:
-            [r_1_x, r_1_y, r_1_z, v_1_x, v_1_y, v_1_z, r_2_x, r_2_y, r_2_z, v_2_x, v_2_y, v_2_z, ...]
-
-            In order to perform the necessary calculations, the state vector must be given with the suns states listed first,
-            followed by the spacecraft states, followed by any additional bodies in the system. It shall be structured as follows:
-
-            [r_sun_x, r_sun_y, r_sun_z, v_sun_x, v_sun_y, v_sun_z, r_sc_x, r_sc_y, r_sc_z, v_sc_x, v_sc_y, v_sc_z, ...]
-        masses (arr): Masses of the bodies in the same order as the state vector:
-            [m_1, m_2, ...]
-        ss_area (float): Area of the solar sail in m^2
-        ss_reflectivity (float): Reflectivity of the solar sail
-        sun_sc_angle (float): Angle between the sun and the spacecraft in radians
-        direction_vector_handle (function): Function that takes in the spacecraft state, suns state, and returns a unit vector. 
-            Shall be implemented as: direction_vector_handle(spacecraft_state, sun_state, curr_time)
-    
-    """
-    
-    # perform typical n body calculations for each body included in the spacecraft
-    state = state.reshape((len(masses), 6))
-    state_der = np.zeros((len(masses), 6))
-    for i, body in enumerate(state):
-        _r_body = np.array([state[i][0], state[i][1], state[i][2]])
-        _v_body = np.array([state[i][3], state[i][4], state[i][5]])
-        _F = np.array([0., 0., 0.])
-        for j, other_body in enumerate(state):
-            if i != j:
-                _r_other_body = np.array([state[j][0], state[j][1], state[j][2]])
-                _v_other_body = np.array([state[j][3], state[j][4], state[j][5]])
-                _r_to_body = _r_body - _r_other_body
-                force = -astro.G * masses[j] * masses[i] / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
-                _F = np.add(_F, force)
-
-        # if the body has the solar sail, then add the force of the solar sail
-        if i == 1:
-            
-            # distance from sun to spacecraft
-            _r_sun = np.array([state[0][0], state[0][1], state[0][2]])
-            _r_sc = np.array([state[1][0], state[1][1], state[1][2]])
-            _r_sun_to_sc = _r_sc - _r_sun
-            
-            # distance from sun to spacecraft
-            distance_from_sun = np.linalg.norm(_r_sun_to_sc)
-            
-            # sun state
-            _sun_state = np.array([state[0][0], state[0][1], state[0][2], state[0][3], state[0][4], state[0][5]])
-            
-            # sc state
-            _sc_state = np.array([state[1][0], state[1][1], state[1][2], state[1][3], state[1][4], state[1][5]])
-
-            # get the direction vector
-            #_force_dir = direction_vector_handle(_sc_state, _sun_state, t)
-            
-            # get sun-sc angle
-            #phi = np.arccos(np.dot(_r_sun_to_sc, _force_dir) / (distance_from_sun * np.linalg.norm(_force_dir)))
-            #sun_sc_angle = np.pi / 2 - phi
-            
-            # normalize the force direction
-            #_force_dir = _force_dir / np.linalg.norm(_force_dir)
-            
-            
-            
-            # calculate the force (via SMAD)
-            F_srp = 9.1113 * 10 ** -6 * ss_area * ss_reflectivity / (distance_from_sun / astro.AU_meters) ** 2
-            
-            #durr_in = t % (365 * 24 * 60 * 60)
-                    
-            #mult = np.cos(2 * np.pi * durr_in / (365 * 24 * 60 * 60))
-            
-            _force_dir = np.cross(_r_sun_to_sc, _v_body)
-            _force_dir = _force_dir / np.linalg.norm(_force_dir)
-            
-            if _r_sc[2] < 0:
-                _force_dir = -_force_dir
-            
-            # apply the force
-            _F = np.add(_F, F_srp * _force_dir)
-            
-            
-
-        _a = _F / masses[i]
-        state_der[i][0] = _v_body[0]
-        state_der[i][1] = _v_body[1]
-        state_der[i][2] = _v_body[2]
-        state_der[i][3] = _a[0]
-        state_der[i][4] = _a[1]
-        state_der[i][5] = _a[2]
-
-    return state_der.flatten()
-    
-
-def literature_cranking_manuever():
-    mass_sc = 10
-    ss_area = 196
-    reflectivity = 1
-    
-    sun_init_state = np.array([0, 0, 0, 0, 0, 0])
-    
-    sc_init_state = np.array([149597870700, 0, 0,
-                              0, 30300, 0]) # 1 AU circular
-                                
-    """ sc_init_state = np.array([5.9e11, 0, 0,
-                              0, 29780, 0]) # .5 AU circular """
-                    
-                                
-    masses = np.array([1.989e30, mass_sc])
-    
-    bodies = np.array([sun_init_state, sc_init_state])
-        
-    tol = 1e-13
-    T = 365 * 24 * 60 * 60 * 5        
-        
-    print("Solving with RK45")
-    t_start = time.time()
-    
-    solver = solve_ivp(LiteraturePropagator, (0, T), bodies.flatten(), args=(masses, ss_area, reflectivity), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 10000))
-    #nominal = solve_ivp(astro.NBodyODE, (0, T), bodies.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 1000))
-    
-    print(f"Time to Propgate: {time.time() - t_start}")
-    
-    # plot the results in 3d
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot3D(solver.y[6], solver.y[7], solver.y[8], linewidth=1, label="Trajectory")
-    ax.set_xlabel('x (DU)', size=10)
-    ax.set_ylabel('y (DU)', size=10)
-    ax.set_zlabel('z (DU)', size=10)
-    ax.set_title("Trajectory of Spacecraft")
-    
-    # plot sun at 0 0 0
-    ax.scatter3D(0, 0, 0, color='orange', label="Sun")
-    
-    axisEqual3D(ax)
-    
-    plt.show()
-    
-
-
-def apply_cranking_manoeuvre(spacecraft_state, sun_state, t):
-        
-    _r_sun = sun_state[0:3]
-    _v_sun = sun_state[3:6]
-    
-    _r_sc = spacecraft_state[0:3]
-    _v_sc = spacecraft_state[3:6]
-    
-    _r_sun_to_sc = _r_sc - _r_sun
-    
-    _momentum_dir = np.cross(_r_sun_to_sc, _v_sc)
-    
-    _sun_tangent = np.cross(_momentum_dir, _r_sun_to_sc)
-    
-    
-    # if the spacecraft is in the ecliptic plane (z = 0) or it is above the ecliptic plane (z > 0)
-    # apply the force orthogonal spacecraft velocity and radial vector from the sun is maximum
-    if spacecraft_state[2] >= 0:
-        _force_dir = astro.rodrigues_rotation_formula(_r_sun_to_sc, _sun_tangent, - np.pi / 4)
-        
-    else:
-        _force_dir = astro.rodrigues_rotation_formula(_r_sun_to_sc, _sun_tangent, np.pi / 4)
-
-
-    # get angle between the force direction and the velocity vector of the spacecraft
-    _angle = np.arccos(np.dot(_force_dir, _v_sc) / (np.linalg.norm(_force_dir) * np.linalg.norm(_v_sc)))
-    #print(f"Angle: {np.rad2deg(_angle)}")
-    return np.linalg.norm(_force_dir)
-    
-def apply_cranking_manoeuvre2(spacecraft_state, sun_state, t):
-    
-    _r_sun = sun_state[0:3]
-    _v_sun = sun_state[3:6]
-    
-    _r_sc = spacecraft_state[0:3]
-    _v_sc = spacecraft_state[3:6]
-    
-    _r_sun_to_sc = _r_sc - _r_sun
-    
-    _momentum_dir = np.cross(_r_sun_to_sc, _v_sc)
-    _sun_tangent = np.cross(_momentum_dir, _r_sun_to_sc)
-    
-    _out = np.cross(_v_sc, _momentum_dir)
-    
-    
-    # if the spacecraft is in the ecliptic plane (z = 0) or it is above the ecliptic plane (z > 0)
-    # apply the force orthogonal spacecraft velocity and radial vector from the sun is maximum
-    if spacecraft_state[2] >= 0:
-        _force_dir = astro.rodrigues_rotation_formula(_momentum_dir, _v_sc,  np.pi / 4)
-        
-    else:
-        _force_dir = astro.rodrigues_rotation_formula(_momentum_dir, _v_sc,  np.pi / 4)
-        
-        
-
-    # get angle between the force direction and the velocity vector of the spacecraft
-    _angle = np.arccos(np.dot(_force_dir, _v_sc) / (np.linalg.norm(_force_dir) * np.linalg.norm(_v_sc)))
-    #print(f"Angle: {np.rad2deg(_angle)}")
-    return np.linalg.norm(_force_dir)
-    
-    
-def crank_up(spacecraft_state, sun_state, t):
-    pass
-    
-
 
 def inclination_change(mass_sc=50, ss_area=14*14, reflectivity=1):
     
@@ -360,11 +151,13 @@ def inclination_change(mass_sc=50, ss_area=14*14, reflectivity=1):
     
 def inclination_change_1AU():    
     sc_mass = 10
-    area = 25*25
+    area = 14*14
     sun_init_state = np.array([0, 0, 0, 0, 0, 0])
     
     sc_init_state = np.array([149597870700, 0, 0,
-                              0, 30300, 0]) # 1 AU circular
+                              0, 30300, 1]) # 1 AU circular
+                              
+    
                               
     masses = np.array([1.989e30, sc_mass])
     
@@ -372,7 +165,7 @@ def inclination_change_1AU():
     bodies = np.array([sun_init_state, sc_init_state])
     
     tol = 1e-13
-    T = 365 * 24 * 60 * 60 * 5
+    T = 365 * 24 * 60 * 60 * 6
     
             
     print("Solving with RK45")
@@ -406,17 +199,28 @@ def inclination_change_1AU():
     ax.set_xlabel('x (m)')
     ax.set_ylabel('y (m)')
     ax.set_zlabel('z (m)')
-    ax.set_title("Paths of the Bodies")
+    ax.set_title("Inclination Change at 1 AU (T = 6 years)")
     ax.legend(loc="best")
     
     axisEqual3D(ax)
+    
+    # calculate standard orbital parameters
+    incs = []
+    for i in range(len(solver.y[0])):
+        _r = np.array([solver.y[0][i], solver.y[1][i], solver.y[2][i]])
+        _v = np.array([solver.y[3][i], solver.y[4][i], solver.y[5][i]])
+        params = astro.cartesian_to_standard(_r, _v, mu=astro.MU_SUN)
+        
+        incs.append(params[2])
+        
+    return incs, solver.t
     
     #plt.show()
 
 
 def inclination_change_halfAU():
-    sc_mass = 3
-    area = 25*25
+    sc_mass = 10
+    area = 14*14
     
     sun_init_state = np.array([0, 0, 0, 0, 0, 0])
     
@@ -424,7 +228,7 @@ def inclination_change_halfAU():
                               0, 29780, 0]) # .5 au
                               
     sc_init_state = np.array([7.48e10, 0, 0,
-                              0, 42120, 0]) # .5 au
+                              0, 42120, 1]) # .5 au
                               
     masses = np.array([1.989e30, sc_mass])
     
@@ -432,13 +236,13 @@ def inclination_change_halfAU():
     bodies = np.array([sun_init_state, sc_init_state])
     
     tol = 1e-13
-    T = 365 * 24 * 60 * 60 * 5
+    T = 365 * 24 * 60 * 60 * 6
     
             
     print("Solving with RK45")
     t_start = time.time()
     
-    solver = solve_ivp(inclinationTesting, (0, T), bodies.flatten(), args=(masses, area, 1, np.pi/4), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 1000))
+    solver = solve_ivp(inclinationTestingHalf, (0, T), bodies.flatten(), args=(masses, area, 1, np.pi/4), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 1000))
     nominal = solve_ivp(astro.NBodyODE, (0, T), bodies.flatten(), args=(masses,), method='RK45', atol=tol, rtol=tol, t_eval=np.arange(0, T, 1000))
     
     print(f"Time to Propgate: {time.time() - t_start}")
@@ -466,10 +270,22 @@ def inclination_change_halfAU():
     ax.set_xlabel('x (m)')
     ax.set_ylabel('y (m)')
     ax.set_zlabel('z (m)')
-    ax.set_title("Paths of the Bodies")
+    ax.set_title("Inclination Change at 0.5 AU (T = 6 years)")
+
     ax.legend(loc="best")
     
     axisEqual3D(ax)
+    
+    # calculate standard orbital parameters
+    incs = []
+    for i in range(len(solver.y[0])):
+        _r = np.array([solver.y[0][i], solver.y[1][i], solver.y[2][i]])
+        _v = np.array([solver.y[3][i], solver.y[4][i], solver.y[5][i]])
+        params = astro.cartesian_to_standard(_r, _v, mu=astro.MU_SUN)
+        
+        incs.append(params[2])
+        
+    return incs, solver.t
     
 def inclinationTesting(t, state, masses, ss_area, ss_reflectivity, sun_sc_angle):
     """Calculates the state derivative for the NBody problem.
@@ -539,9 +355,95 @@ def inclinationTesting(t, state, masses, ss_area, ss_reflectivity, sun_sc_angle)
                     # calculate the force (via SMAD)
                     F_srp = 9.1113 * 10 ** -6 * ss_area * ss_reflectivity * np.sin(sun_sc_angle) ** 2 / (distance_from_sun / astro.AU_meters) ** 2
                     
-                    durr_in = t % (365 * 24 * 60 * 60)
+                    durr_in = t % (31559675.2)
                     
-                    mult = np.cos(2 * np.pi * durr_in / (365 * 24 * 60 * 60))
+                    mult = np.cos(2 * np.pi * durr_in / (31559675.2))
+                    
+                    # apply the force
+                    _F = np.add(_F, F_srp * mult * _force_dir)
+
+        _a = _F / masses[i]
+        state_der[i][0] = _v_body[0]
+        state_der[i][1] = _v_body[1]
+        state_der[i][2] = _v_body[2]
+        state_der[i][3] = _a[0]
+        state_der[i][4] = _a[1]
+        state_der[i][5] = _a[2]
+
+    return state_der.flatten()
+
+
+def inclinationTestingHalf(t, state, masses, ss_area, ss_reflectivity, sun_sc_angle):
+    """Calculates the state derivative for the NBody problem.
+    masses in kg
+    state in m and m/s
+
+    Args:
+        t (float): Time
+        state (arr): State vector with form:
+            [r_1_x, r_1_y, r_1_z, v_1_x, v_1_y, v_1_z, r_2_x, r_2_y, r_2_z, v_2_x, v_2_y, v_2_z, ...]
+
+            In order to perform the necessary calculations, the state vector must be given with the suns states listed first,
+            followed by the spacecraft states, followed by any additional bodies in the system. It shall be structured as follows:
+
+            [r_sun_x, r_sun_y, r_sun_z, v_sun_x, v_sun_y, v_sun_z, r_sc_x, r_sc_y, r_sc_z, v_sc_x, v_sc_y, v_sc_z, ...]
+        masses (arr): Masses of the bodies in the same order as the state vector:
+            [m_1, m_2, ...]
+        ss_area (float): Area of the solar sail in m^2
+        ss_reflectivity (float): Reflectivity of the solar sail
+        sun_sc_angle (float): Angle between the sun and the spacecraft in radians
+        direction_vector_handle (function): Function that takes in the spacecraft state, suns state, and returns a unit vector. 
+            Shall be implemented as: direction_vector_handle(spacecraft_state, sun_state)
+    
+    """
+    
+    # perform typical n body calculations for each body included in the spacecraft
+    #print(t / (365 * 24 * 60 * 60 * 10))
+    state = state.reshape((len(masses), 6))
+    state_der = np.zeros((len(masses), 6))
+    for i, body in enumerate(state):
+        _r_body = np.array([state[i][0], state[i][1], state[i][2]])
+        _v_body = np.array([state[i][3], state[i][4], state[i][5]])
+        _F = np.array([0., 0., 0.])
+        for j, other_body in enumerate(state):
+            if i != j:
+                _r_other_body = np.array([state[j][0], state[j][1], state[j][2]])
+                _v_other_body = np.array([state[j][3], state[j][4], state[j][5]])
+                _r_to_body = _r_body - _r_other_body
+                force = -astro.G * masses[j] * masses[i] / np.linalg.norm(_r_to_body) ** 3 * _r_to_body
+                _F = np.add(_F, force)
+
+                # if the body has the solar sail, then add the force of the solar sail
+                if i == 1:
+                    
+                    # distance from sun to spacecraft
+                    _r_sun = np.array([state[0][0], state[0][1], state[0][2]])
+                    _r_sc = np.array([state[1][0], state[1][1], state[1][2]])
+                    _r_sun_to_sc = _r_sc - _r_sun
+                    
+                    # distance from sun to spacecraft
+                    distance_from_sun = np.linalg.norm(_r_sun_to_sc)
+                    
+                    # sun state
+                    _sun_state = np.array([state[0][0], state[0][1], state[0][2], state[0][3], state[0][4], state[0][5]])
+                    
+                    # sc state
+                    _sc_state = np.array([state[1][0], state[1][1], state[1][2], state[1][3], state[1][4], state[1][5]])
+
+                    # get the direction vector
+                    # calculate r cross v
+                    _r_cross_v = np.cross(_r_sun_to_sc, _v_body)
+                    # magnitude 
+                    _r_cross_v_mag = np.linalg.norm(_r_cross_v)
+                    # normalize
+                    _force_dir = _r_cross_v / _r_cross_v_mag
+                    
+                    # calculate the force (via SMAD)
+                    F_srp = 9.1113 * 10 ** -6 * ss_area * ss_reflectivity * np.sin(sun_sc_angle) ** 2 / (distance_from_sun / astro.AU_meters) ** 2
+                    
+                    durr_in = t % (11158268.4)
+                    
+                    mult = np.cos(2 * np.pi * durr_in / (11158268.4))
                     
                     # apply the force
                     _F = np.add(_F, F_srp * mult * _force_dir)
@@ -568,117 +470,19 @@ def axisEqual3D(ax):
         getattr(ax, 'set_{}lim'.format(dim))(ctr - r, ctr + r)
 
 
-def propogate_specific_accel(t, state, specfic_thrust):
-    """State space representation of Newton's Law of Gravitation. Only implemented for Earth.
-        Selected state variables are [r_x, r_y, r_z, v_x, v_y, v_z]
-
-        This implementation considers a specfic thrust (acceleration) that is tangential to 
-        the velocity of the spacecraft at the given timestep.
-
-    Args:
-        t (float): Current time step
-        state (arr): State vector of form [r_x, r_y, r_z, v_x, v_y, v_z]
-
-    Returns:
-        Value of velocity and acceleration at the given time and state in form:
-            [v_x, v_y, v_z, a_x, a_y, a_z]
-    """
-    
-    #print(t / (365 *24 * 60 * 60 / 12) * 100)
-
-    _r = state[0:3]
-    _v = state[3:]
-
-    _f_dir = np.cross(_r, _v)
-    _f_dir = _f_dir / np.linalg.norm(_f_dir)
-    
-    if _r[2] < 0:
-        _f_dir = - _f_dir
-
-    # a = - mu / norm(r) ^ 3 * r
-    _a = - astro.MU_EARTH / (np.linalg.norm(_r) ** 3) * _r + specfic_thrust * _f_dir
-
-    val = np.array([_v[0], _v[1], _v[2], _a[0], _a[1], _a[2]])
-    return val
-
-
-def test_spec():
-    a = 7500 * 10 ** 3
-    e = 0
-    i = 0
-    w = 0
-    raan = 0
-    v = 0
-
-    a_t = 10
-
-    _r, _v = astro.standard_to_cartesian(a, e, i, w, raan, v)
-
-    # if any element of _v is really small, set it to 0
-    for i in range(len(_v)):
-        if abs(_v[i]) < 10 ** -10:
-            _v[i] = 0
-
-    r_0 = np.linalg.norm(_r)
-    v_0 = np.linalg.norm(_v)
-
-    t_escape = v_0 / a_t * (1 - ((20 * a_t ** 2 * r_0 **2) / (v_0 ** 4)) ** (1/8)) /4
-    
-    print(f"Initial r: {_r}")
-    print(f"Initial v: {_v}")
-    print(f"Escape time: {t_escape}")
-
-    init_state = np.array([_r[0], _r[1], _r[2], _v[0], _v[1], _v[2]])
-    tol = 10**-13
-    T = 365 * 24 * 60 * 60 / 100
-
-    a = time.time()
-    orbit = solve_ivp(propogate_specific_accel, [0, T], init_state, args=(a_t,), method="RK45", atol=tol, rtol=tol, t_eval=np.linspace(0, T, 1000))
-    print(f"Propogation took: {time.time() - a} seconds.")
-
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot3D(orbit.y[0], orbit.y[1], orbit.y[2], linewidth=.2)
-    ax.set_xlabel('x (m)', size=10)
-    ax.set_ylabel('y (m)', size=10)
-    ax.set_zlabel('z (m)', size=10)
-    ax.set_title("Orbital Path of Satellite")
-    #ax.set_zlim(-5*10**8, 5*10**8) # due to doing the math in meters
-
-    """ # get the final velocity vector
-    _v_f = orbit.y[3:, -1]
-
-    print(f"Velocity at final epoch (t={orbit.t[-1]}): {_v_f}")
-
-    r_escape = (r_0 * v_0) / (20 * a_t ** 2 * r_0 ** 2) ** (1/4)
-    
-    # calculate when the satellite will escape
-    for i in range(len(orbit.t)):
-        if np.linalg.norm(orbit.y[:3, i]) >= r_escape:
-            t_escape_true = orbit.t[i]
-            print(f"Satellite escaped at t={orbit.t[i]} with radius {np.linalg.norm(orbit.y[:3, i])}")
-            print(f"Overshot r_escape by {np.linalg.norm(orbit.y[:3, i]) - r_escape}")
-            break
-    
-    # calculate error in escape time and percent relative error
-    print(f"Error in escape time: {t_escape - t_escape_true}")
-    print(f"Percent relative error: {abs(t_escape - t_escape_true) / t_escape * 100}%")
-
-    # calculate when the satellite will reach a radius of 8000 km
-    for i in range(len(orbit.t)):
-        if np.linalg.norm(orbit.y[:3, i]) >= 8000 * 10 ** 3:
-            t_8000 = orbit.t[i]
-            print(f"Satellite reached 8000 km at t={orbit.t[i]} with radius {np.linalg.norm(orbit.y[:3, i])}")
-            print(f"Overshot 8000 km by {np.linalg.norm(orbit.y[:3, i]) - 8000 * 10 ** 3}")
-            break """
-    
-    axisEqual3D(ax)
-    plt.show()
-
-
 if __name__ == "__main__":
     #inclination_change()
-    inclination_change_1AU()
-    #inclination_change_halfAU()
+    inc1, t1 = inclination_change_1AU()
+    inc2, t2 = inclination_change_halfAU()
+    fig = plt.figure()
+    ax = plt.axes()
+    
+    ax.plot(t1, inc1, label="1 AU")
+    ax.plot(t2, inc2, label="0.5 AU")
+    
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Inclination (deg)")
+    ax.set_title("Inclination Change Over Time")
+    ax.legend()
+    
     plt.show()
-    #test_spec()

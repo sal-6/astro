@@ -75,9 +75,7 @@ def num_1():
     ax.set_zlabel('z (m)', size=10)
     ax.set_title("Orbital Path of Orbit A")
     
-
     plt.tight_layout()
-
 
     # label periapsis
     mins, _ = find_peaks(np.array(pos)*-1)
@@ -88,10 +86,8 @@ def num_1():
 
     ax1.plot(t_s, y_s, "ro")
 
-
     init_energy = vel[0] ** 2 / 2 - astro.MU_EARTH / pos[0]
     energy_deviation = [astro.calculate_orbital_energy(pos[i], vel[i]) - init_energy for i in range(len(orbit.t))]
-
 
     fig2 = plt.figure()
     ax4 = plt.axes()
@@ -124,7 +120,6 @@ def num_1():
         momentum_axes[i].set_xlabel('Time (s)', size=10)
         momentum_axes[i].set_ylabel(f'Angular Momentum (m^2/s)', size=10)
         momentum_axes[i].set_title(f'{ax_symbol.upper()}-Component of Angular Momentum Vs Time')
-
 
     plt.tight_layout()
     
@@ -203,7 +198,6 @@ def num_2():
     init_energy = vel[0] ** 2 / 2 - astro.MU_EARTH / pos[0]
     energy_deviation = [astro.calculate_orbital_energy(pos[i], vel[i]) - init_energy for i in range(len(orbit.t))]
 
-
     fig2 = plt.figure()
     ax4 = plt.axes()
 
@@ -213,7 +207,6 @@ def num_2():
     ax4.set_title("Deviation from Initial Orbital Energy Vs Time of Orbit B (t = 10000 s)")
 
     plt.tight_layout()
-
 
     true_anomoly = []
     for i in range(len(orbit.t)):

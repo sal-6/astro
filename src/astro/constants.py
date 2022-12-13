@@ -13,6 +13,7 @@ DIR_Z = np.array([0, 0, 1])
 
 # Specific Gravitation Constants
 MU_EARTH = 3.986004418 * 10 ** 14
+MU_SUN = 1.32712440018 * 10 ** 20
 
 RADIUS_EARTH = 6378000 # m
 
