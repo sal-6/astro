@@ -4,7 +4,7 @@ import time
 from scipy.integrate import solve_ivp
 from matplotlib import pyplot as plt
 
-def num_1():
+def num_1_and_2():
     
     target_r_p = astro.RADIUS_EARTH + 1010 * 1000
     interceptor_r_p = astro.RADIUS_EARTH + 1000 * 1000
@@ -74,9 +74,13 @@ def num_1():
     cw_y = []
     cw_z = []
     
+    init_rel_r = None
+    init_rel_v = None
+    
+    timesteps = range(0, round((T+1)/2))
     
     # loop over timesteps
-    for i in range(0, T+1):
+    for i in timesteps:
         
         # calculate RSW unit vectors at current timestep
         r = target_orbit.y[0:3, i] / np.linalg.norm(target_orbit.y[0:3, i])
@@ -88,6 +92,10 @@ def num_1():
         # calculate relative position and velocity
         rel_r = interceptor_orbit.y[0:3, i] - target_orbit.y[0:3, i]
         rel_v = interceptor_orbit.y[3:6, i] - target_orbit.y[3:6, i]
+        
+        if i == 0:
+            init_rel_r = rel_r
+            init_rel_v = rel_v
         
         # transform relative position and velocity to RSW frame
         rel_r_rsw = np.matmul(transformation_matrix, rel_r)
@@ -105,81 +113,57 @@ def num_1():
         
         cw_x.append(cw[0])
         cw_y.append(cw[1])
-        cw_z.append(cw[2])
+        cw_z.append(cw[2])    
     
-    print(cw_x[0])
-        
-    print(rel_R[0])
-    print(rel_S[0])
-    print(rel_W[0])
+    # get round((T_1+1)/2) timesteps from target orbit time
+    timesteps = target_orbit.t[0:round((T+1)/2)]
+    print(timesteps.size)
     
-    print(rel_R_v[0])
-    print(rel_S_v[0])
-    print(rel_W_v[0])
-    
-        
-    
-    # create a 2 by 3 subplot for the relative position and cw components
-    fig, axes = plt.subplots(2, 3)
+    # create a 1 by 3 subplot for the relative position and cw components
+    fig, axes = plt.subplots(1, 3)
     
     # plot the relative position in RSW frame
-    axes[0, 0].plot(target_orbit.t, rel_R)
-    axes[0, 0].set_title('Relative Position (R Component, Numerical)')
-    axes[0, 0].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
+    axes[0].plot(timesteps, rel_R)
+    axes[0].plot(timesteps, cw_x)
+    axes[0].set_title('Relative Position (R Component)')
+    axes[0].set_xlabel('Time (s)')
+    axes[0].set_ylabel('Relative Position (m)')
+    axes[0].legend(['Numerical', 'Clohessy-Wiltshire'])
     
-    axes[0, 1].plot(target_orbit.t, rel_S)
-    axes[0, 1].set_title('Relative Position (S Component, Numerical)')
-    axes[0, 1].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
+    axes[1].plot(timesteps, rel_S)
+    axes[1].plot(timesteps, cw_y)
+    axes[1].set_title('Relative Position (S Component)')
+    axes[1].set_xlabel('Time (s)')
+    axes[1].set_ylabel('Relative Position (m)')
+    axes[1].legend(['Numerical', 'Clohessy-Wiltshire'])
     
-    
-    axes[0, 2].plot(target_orbit.t, rel_W)
-    axes[0, 2].set_title('Relative Position (W Component, Numerical)')
-    axes[0, 2].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
-    
-    # plot the relative velocity in RSW frame
-    axes[1, 0].plot(target_orbit.t, cw_x)
-    axes[1, 0].set_title('Relative Position (R Component, CW)')
-    axes[1, 0].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
-    
-    axes[1, 1].plot(target_orbit.t, cw_y)
-    axes[1, 1].set_title('Relative Position (S Component, CW)')
-    axes[1, 1].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
-    
-    axes[1, 2].plot(target_orbit.t, cw_z)
-    axes[1, 2].set_title('Relative Position (W Component, CW)')
-    axes[1, 2].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Relative Position (m)')
-
-    """fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-
-    # get all R components of relative position
-
-    # plot the relative position in RSW frame
-    ax1.plot(target_orbit.t, rel_R)
-    ax1.set_title('Relative Position (R Component)')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('Relative Position (m)')
-
-    ax2.plot(target_orbit.t, rel_S)
-    ax2.set_title('Relative Position (S Component)')
-    ax2.set_xlabel('Time (s)')
-
-    ax3.plot(target_orbit.t, rel_W)
-    ax3.set_title('Relative Position (W Component)')
-    ax3.set_xlabel('Time (s)')
-
-    fig.tight_layout() """
-    
+    axes[2].plot(timesteps, rel_W)
+    axes[2].plot(timesteps, cw_z)
+    axes[2].set_title('Relative Position (W Component)')
+    axes[2].set_xlabel('Time (s)')
+    axes[2].set_ylabel('Relative Position (m)')
+    axes[2].legend(['Numerical', 'Clohessy-Wiltshire'])
     
     fig.tight_layout()
+    
+    ind = 0
+    while True:
+        if abs(cw_x[ind] - rel_R[ind]) / abs(cw_x[ind]) > 1:
+            break
+        ind += 1
+        
+    print("T = " + str(timesteps[ind]))
+    
+    v1, v2 = astro.docking(init_rel_r, init_rel_v, omega, 100)
+    
+    print("V1 = " + str(v1))
+    print("V2 = " + str(v2))
+    
         
     plt.show()
     
+
+    
 if __name__ == "__main__":
-    num_1()
+    num_1_and_2()
     
