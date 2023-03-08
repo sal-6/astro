@@ -11,16 +11,9 @@ import time
 import math
 
 # Part 2 - Consrtuct an acceleration function for the given perturbations
-def two_body_accel(state, mu=astro.MU_EARTH):
-    """Compute the two-body acceleration
 
-    Args:
-        state (np.array): state vector
 
-    Returns:
-        np.array: acceleration vector
-    """
-    
+def two_body_accel(state, mu=astro.MU_EARTH):    
     # Unpack the state vector
     _r = state[0:3]
     _v = state[3:6]
@@ -87,7 +80,6 @@ def propogate_with_perturbations(t, y, mu=astro.MU_EARTH):
     _a_j2 = j2_accel(y)
     _a_drag = atmospheric_drag_accel(y, 5*10**-3, 2.2, 10*10**-6, 1000)
     _a = _a_two_body + _a_drag + _a_j2
-    #print(_a - _a_two_body)
     
     return np.array([_v[0], _v[1], _v[2], _a[0], _a[1], _a[2]])
     
@@ -134,7 +126,8 @@ def main():
     T = period * num_periods
     
     a = time.time()
-    orbit = solve_ivp(propogate_with_perturbations, [0, T], initial_state, method="RK45", atol=10**-13, rtol=10**-13, t_eval=np.linspace(0, T, 1000000))
+    orbit = solve_ivp(propogate_with_perturbations, [0, T], initial_state, \
+                      method="RK45", atol=10**-13, rtol=10**-13, t_eval=np.linspace(0, T, 1000000))
     print(f"Propogation took: {time.time() - a} seconds.")
     
     fig = plt.figure()
